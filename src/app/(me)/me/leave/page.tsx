@@ -21,6 +21,7 @@ type LeaveRequest = {
 export default function MyLeavePage() {
   const { showToast } = useToast()
   const { session } = useAuth()
+  const currentYear = new Date().getFullYear()
 
   const [loading, setLoading] = useState(true)
   const [leaveTypes, setLeaveTypes] = useState<LeaveTypeOption[]>([])
@@ -56,7 +57,7 @@ export default function MyLeavePage() {
   }, [])
 
   const canSubmit = useMemo(() => {
-    return !!leave_type_id && !!start_date && !!end_date
+    return leaveTypes.length > 0 && !!leave_type_id && !!start_date && !!end_date
   }, [leave_type_id, start_date, end_date])
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -106,7 +107,7 @@ export default function MyLeavePage() {
               <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
                 leave type
               </label>
-              <select className="input" value={leave_type_id} onChange={(e) => setLeaveTypeId(e.target.value)}>
+              <select className="input" value={leave_type_id} onChange={(e) => setLeaveTypeId(e.target.value)} disabled={loading || leaveTypes.length === 0}>
                 <option value="">Select…</option>
                 {leaveTypes.map((t) => (
                   <option key={t.id} value={t.id}>
@@ -114,19 +115,27 @@ export default function MyLeavePage() {
                   </option>
                 ))}
               </select>
+              {!loading && leaveTypes.length === 0 && (
+                <div style={{ marginTop: 8, fontSize: 11.5, color: 'var(--t3)', lineHeight: 1.35 }}>
+                  No leave types available for you yet because your <b>leave balances</b> are not initialized.
+                  <br />
+                  Ask HR to initialize leave balances for <span className="mono">{session?.user.employee_id ?? '(unknown employee_id)'}</span> for year{' '}
+                  <span className="mono">{currentYear}</span>, then refresh this page.
+                </div>
+              )}
             </div>
             <div />
             <div>
               <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
                 start_date
               </label>
-              <input className="input" type="date" value={start_date} onChange={(e) => setStartDate(e.target.value)} />
+              <input className="input" type="date" value={start_date} onChange={(e) => setStartDate(e.target.value)} disabled={loading || leaveTypes.length === 0} />
             </div>
             <div>
               <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
                 end_date
               </label>
-              <input className="input" type="date" value={end_date} onChange={(e) => setEndDate(e.target.value)} />
+              <input className="input" type="date" value={end_date} onChange={(e) => setEndDate(e.target.value)} disabled={loading || leaveTypes.length === 0} />
             </div>
           </div>
           <div>
@@ -136,7 +145,7 @@ export default function MyLeavePage() {
             <input className="input" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Optional…" />
           </div>
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <button className="btn btn-primary" disabled={submitting}>
+            <button className="btn btn-primary" disabled={submitting || !canSubmit}>
               {submitting ? 'Submitting…' : 'Submit Request'}
             </button>
           </div>
