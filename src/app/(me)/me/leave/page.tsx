@@ -5,7 +5,7 @@ import { apiFetch } from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
 import { useAuth } from '@/contexts/AuthContext'
 
-type LeaveBalanceRow = { leave_type_id: string; leave_type_name: string; year: number; balance: number; used: number; total: number }
+type LeaveTypeApi = { id: string; name: string; is_active?: boolean }
 type LeaveTypeOption = { id: string; name: string }
 type LeaveRequest = {
   id: string
@@ -21,7 +21,6 @@ type LeaveRequest = {
 export default function MyLeavePage() {
   const { showToast } = useToast()
   const { session } = useAuth()
-  const currentYear = new Date().getFullYear()
 
   const [loading, setLoading] = useState(true)
   const [leaveTypes, setLeaveTypes] = useState<LeaveTypeOption[]>([])
@@ -35,19 +34,18 @@ export default function MyLeavePage() {
 
   const load = async () => {
     setLoading(true)
-    const [balancesRes, reqRes] = await Promise.all([apiFetch<LeaveBalanceRow[]>('/leave-balances'), apiFetch<LeaveRequest[]>('/leave-requests')])
+    const [typesRes, reqRes] = await Promise.all([apiFetch<LeaveTypeApi[]>('/leave-types'), apiFetch<LeaveRequest[]>('/leave-requests')])
     setLoading(false)
-    if (!balancesRes.ok) showToast(balancesRes.error, 'error')
+    if (!typesRes.ok) showToast(typesRes.error, 'error')
     if (!reqRes.ok) showToast(reqRes.error, 'error')
-    if (balancesRes.ok) {
-      const opts = new Map<string, LeaveTypeOption>()
-      for (const b of balancesRes.data) {
-        if (!opts.has(b.leave_type_id)) opts.set(b.leave_type_id, { id: b.leave_type_id, name: b.leave_type_name })
-      }
-      setLeaveTypes(Array.from(opts.values()).sort((a, b) => a.name.localeCompare(b.name)))
-    } else {
-      setLeaveTypes([])
-    }
+    setLeaveTypes(
+      typesRes.ok
+        ? typesRes.data
+            .filter((t) => t.is_active !== false)
+            .map((t) => ({ id: t.id, name: t.name }))
+            .sort((a, b) => a.name.localeCompare(b.name))
+        : []
+    )
     setRequests(reqRes.ok ? reqRes.data : [])
   }
 
@@ -117,10 +115,7 @@ export default function MyLeavePage() {
               </select>
               {!loading && leaveTypes.length === 0 && (
                 <div style={{ marginTop: 8, fontSize: 11.5, color: 'var(--t3)', lineHeight: 1.35 }}>
-                  No leave types available for you yet because your <b>leave balances</b> are not initialized.
-                  <br />
-                  Ask HR to initialize leave balances for <span className="mono">{session?.user.employee_id ?? '(unknown employee_id)'}</span> for year{' '}
-                  <span className="mono">{currentYear}</span>, then refresh this page.
+                  No leave types are available. If this is unexpected, verify your account has <span className="mono">leave:read</span> permission.
                 </div>
               )}
             </div>
