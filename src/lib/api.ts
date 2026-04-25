@@ -7,31 +7,40 @@ export type ApiResult<T> =
   | { ok: true; status: number; data: T }
   | { ok: false; status: number; error: string; details?: unknown }
 
-const defaultBase = 'http://localhost:3000/api'
+const defaultBase = '/api'
 
 export const getApiBase = () => {
   const env = process.env.NEXT_PUBLIC_API_BASE_URL
   return (env && env.trim().length > 0 ? env : defaultBase).replace(/\/$/, '')
 }
 
-export const getToken = () => {
+const getCsrfToken = () => {
   if (typeof window === 'undefined') return null
-  return localStorage.getItem('ems_token')
+  const csrfCookie = document.cookie
+    .split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith('ems_csrf='))
+
+  return csrfCookie ? decodeURIComponent(csrfCookie.slice('ems_csrf='.length)) : null
 }
 
 export async function apiFetch<T>(
   path: string,
-  opts?: { method?: string; body?: unknown; token?: string | null; headers?: Record<string, string> }
+  opts?: { method?: string; body?: unknown; headers?: Record<string, string> }
 ): Promise<ApiResult<T>> {
   const base = getApiBase()
-  const method = opts?.method ?? 'GET'
-  const token = (opts?.token ?? getToken()) ?? null
+  const method = (opts?.method ?? 'GET').toUpperCase()
 
   const headers: Record<string, string> = {
     ...(opts?.headers ?? {}),
   }
 
-  if (token) headers['Authorization'] = `Bearer ${token}`
+  if (method !== 'GET' && method !== 'HEAD') {
+    const csrfToken = getCsrfToken()
+    if (csrfToken) {
+      headers['x-csrf-token'] = csrfToken
+    }
+  }
 
   let body: string | undefined
   if (opts?.body !== undefined) {
@@ -44,6 +53,8 @@ export async function apiFetch<T>(
       method,
       headers,
       body,
+      credentials: 'include',
+      cache: 'no-store',
     })
 
     const contentType = res.headers.get('content-type') ?? ''
@@ -63,8 +74,8 @@ export async function apiFetch<T>(
       typeof payload === 'object' && payload !== null && 'details' in payload ? (payload as ApiErrorShape).details : undefined
 
     return { ok: false, status: res.status, error: msg, details }
-  } catch (e: any) {
-    return { ok: false, status: 0, error: e?.message || 'Network error' }
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Network error'
+    return { ok: false, status: 0, error: message }
   }
 }
-

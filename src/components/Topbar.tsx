@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { roleLabel } from '@/lib/roles'
@@ -25,16 +25,17 @@ export default function Topbar() {
   const [time, setTime] = useState(new Date())
 
   useEffect(() => {
-    const t = window.setInterval(() => setTime(new Date()), 1000)
-    return () => window.clearInterval(t)
+    const timer = window.setInterval(() => setTime(new Date()), 1000)
+    return () => window.clearInterval(timer)
   }, [])
 
-  const pageName = useMemo(() => {
-    for (const [re, name] of routeNames) {
-      if (re.test(pathname)) return name
+  let pageName = 'Page'
+  for (const [re, name] of routeNames) {
+    if (re.test(pathname)) {
+      pageName = name
+      break
     }
-    return 'Page'
-  }, [pathname])
+  }
 
   const dateStr = time.toLocaleDateString('en-PK', {
     weekday: 'short',
@@ -47,7 +48,7 @@ export default function Topbar() {
     <div className="topbar">
       <div className="bc">
         <span className="bc-home">EMS</span>
-        <span className="bc-sep">·</span>
+        <span className="bc-sep">.</span>
         <span className="bc-cur">{pageName}</span>
       </div>
 
@@ -56,9 +57,8 @@ export default function Topbar() {
         <span className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
           {roleLabel(session?.user.role ?? '')}
         </span>
-        <div className="t-av">{session?.user.email?.slice(0, 2).toUpperCase() ?? 'U'}</div>
+        <div className="t-av">{(session?.user.email ?? session?.user.employee_id ?? 'U').slice(0, 2).toUpperCase()}</div>
       </div>
     </div>
   )
 }
-

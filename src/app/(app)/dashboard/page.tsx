@@ -1,8 +1,12 @@
 'use client'
 
 import React, { useEffect, useMemo, useState } from 'react'
-import { apiFetch } from '@/lib/api'
 import { useToast } from '@/contexts/ToastContext'
+import { apiFetch } from '@/lib/api'
+
+type EmployeeSummary = { employee_id: string }
+type LeaveSummary = { id: string; status: 'pending' | 'approved' | 'rejected' }
+type AttendanceSummary = { attendance_id: string | null }
 
 export default function DashboardPage() {
   const { showToast } = useToast()
@@ -12,13 +16,14 @@ export default function DashboardPage() {
 
   useEffect(() => {
     let alive = true
+
     ;(async () => {
       setLoading(true)
 
       const [employeesRes, leaveRes, attendanceRes] = await Promise.all([
-        apiFetch<any[]>('/employees'),
-        apiFetch<any[]>('/leave-requests'),
-        apiFetch<any[]>(`/attendance/daily?date=${encodeURIComponent(today)}`),
+        apiFetch<EmployeeSummary[]>('/employees'),
+        apiFetch<LeaveSummary[]>('/leave-requests'),
+        apiFetch<AttendanceSummary[]>(`/attendance/daily?date=${encodeURIComponent(today)}`),
       ])
 
       if (!alive) return
@@ -27,8 +32,8 @@ export default function DashboardPage() {
       if (!leaveRes.ok) showToast(`Leaves: ${leaveRes.error}`, 'error')
       if (!attendanceRes.ok) showToast(`Attendance: ${attendanceRes.error}`, 'error')
 
-      const pendingLeaves = leaveRes.ok ? leaveRes.data.filter((r) => r.status === 'pending').length : 0
-      const todaysMarked = attendanceRes.ok ? attendanceRes.data.filter((r) => r.attendance_id).length : 0
+      const pendingLeaves = leaveRes.ok ? leaveRes.data.filter((row) => row.status === 'pending').length : 0
+      const todaysMarked = attendanceRes.ok ? attendanceRes.data.filter((row) => row.attendance_id).length : 0
 
       setMetrics({
         employees: employeesRes.ok ? employeesRes.data.length : 0,
@@ -57,25 +62,24 @@ export default function DashboardPage() {
           <div className="mono" style={{ fontSize: 11, color: 'var(--t3)' }}>
             Employees
           </div>
-          <div style={{ fontSize: 24, fontWeight: 900, marginTop: 6 }}>{loading ? '…' : metrics?.employees ?? 0}</div>
+          <div style={{ fontSize: 24, fontWeight: 900, marginTop: 6 }}>{loading ? '...' : metrics?.employees ?? 0}</div>
         </div>
 
         <div className="card">
           <div className="mono" style={{ fontSize: 11, color: 'var(--t3)' }}>
             Pending Leave Requests
           </div>
-          <div style={{ fontSize: 24, fontWeight: 900, marginTop: 6 }}>{loading ? '…' : metrics?.pendingLeaves ?? 0}</div>
+          <div style={{ fontSize: 24, fontWeight: 900, marginTop: 6 }}>{loading ? '...' : metrics?.pendingLeaves ?? 0}</div>
         </div>
 
         <div className="card">
           <div className="mono" style={{ fontSize: 11, color: 'var(--t3)' }}>
             Attendance Marked Today
           </div>
-          <div style={{ fontSize: 24, fontWeight: 900, marginTop: 6 }}>{loading ? '…' : metrics?.todaysMarked ?? 0}</div>
+          <div style={{ fontSize: 24, fontWeight: 900, marginTop: 6 }}>{loading ? '...' : metrics?.todaysMarked ?? 0}</div>
           <div style={{ fontSize: 11.5, color: 'var(--t3)', marginTop: 6 }}>Marked rows have an attendance record.</div>
         </div>
       </div>
     </div>
   )
 }
-

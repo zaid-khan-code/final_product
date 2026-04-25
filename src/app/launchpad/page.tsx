@@ -15,7 +15,7 @@ export default function LaunchpadPage() {
     if (!session) router.replace('/login')
   }, [ready, session, router])
 
-  if (!ready) return <div style={{ height: '100vh', display: 'grid', placeItems: 'center', color: 'var(--t3)' }}>Loading…</div>
+  if (!ready) return <div style={{ height: '100vh', display: 'grid', placeItems: 'center', color: 'var(--t3)' }}>Loading...</div>
   if (!session) return null
 
   return (
@@ -27,13 +27,13 @@ export default function LaunchpadPage() {
               ESSPL ECOSYSTEM
             </div>
             <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--t1)' }}>
-              Welcome back, {session.user.email}
+              Welcome back, {session.user.email ?? session.user.employee_id ?? 'User'}
             </h1>
             <div className="mono" style={{ marginTop: 6, color: 'var(--t3)' }}>
               Role: {roleLabel(session.user.role)}
             </div>
           </div>
-          <button className="btn btn-secondary" onClick={logout}>
+          <button className="btn btn-secondary" onClick={() => void logout()}>
             Sign Out
           </button>
         </div>
@@ -89,4 +89,3 @@ export default function LaunchpadPage() {
     </div>
   )
 }
-

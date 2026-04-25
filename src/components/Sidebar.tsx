@@ -2,11 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { CalendarCheck, CalendarDays, LayoutDashboard, LogOut, Users, Zap } from 'lucide-react'
+import { CalendarCheck, CalendarDays, LayoutDashboard, LogOut, type LucideIcon, Users, Zap } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { roleLabel } from '@/lib/roles'
 
-function NavItem({ href, label, Icon }: { href: string; label: string; Icon: any }) {
+function NavItem({ href, label, Icon }: { href: string; label: string; Icon: LucideIcon }) {
   const pathname = usePathname()
   const active = pathname === href || pathname.startsWith(`${href}/`)
   return (
@@ -62,7 +62,7 @@ export default function Sidebar() {
 
       <div className="sb-bottom">
         <div className="sb-user">
-          <div className="sb-chip" onClick={logout} title="Logout">
+          <div className="sb-chip" onClick={() => void logout()} title="Logout">
             <div className="sb-av">{session?.user.email?.slice(0, 2).toUpperCase() ?? 'U'}</div>
             <div>
               <div className="sb-un">{session?.user.email ?? 'User'}</div>
@@ -75,4 +75,3 @@ export default function Sidebar() {
     </div>
   )
 }
-

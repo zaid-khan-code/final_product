@@ -1,29 +1,17 @@
 'use client'
 
-import React, { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import React from 'react'
 import EmployeeSidebar from '@/components/EmployeeSidebar'
 import Topbar from '@/components/Topbar'
 import { useAuth } from '@/contexts/AuthContext'
+import { canUseSelfService } from '@/lib/session'
 
 export default function MeLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter()
-  const { ready, session, isEmployee } = useAuth()
+  const { ready, session } = useAuth()
 
-  useEffect(() => {
-    if (!ready) return
-    if (!session) {
-      router.replace('/login')
-      return
-    }
-    if (!isEmployee) {
-      router.replace('/dashboard')
-    }
-  }, [ready, session, isEmployee, router])
-
-  if (!ready) return <div style={{ height: '100vh', display: 'grid', placeItems: 'center', color: 'var(--t3)' }}>Loading…</div>
+  if (!ready) return <div style={{ height: '100vh', display: 'grid', placeItems: 'center', color: 'var(--t3)' }}>Loading...</div>
   if (!session) return null
-  if (!isEmployee) return null
+  if (!canUseSelfService(session.user)) return null
 
   return (
     <div className="app-layout">
@@ -35,4 +23,3 @@ export default function MeLayout({ children }: { children: React.ReactNode }) {
     </div>
   )
 }
-

@@ -2,8 +2,9 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { apiFetch } from '@/lib/api'
+import ComingSoonCard from '@/components/ComingSoonCard'
 import { useToast } from '@/contexts/ToastContext'
+import { apiFetch } from '@/lib/api'
 
 type Department = { id: string; department_name: string }
 type Designation = { id: string; title: string }
@@ -12,6 +13,8 @@ type JobStatus = { id: string; status_name: string }
 type WorkMode = { id: string; mode_name: string }
 type WorkLocation = { id: string; location_name: string }
 type Shift = { id: string; name: string }
+type EmployeeCreateResponse = { id: string; employee_id: string }
+type JobInfoCreateResponse = { id: string; employee_id: string }
 
 export default function AddEmployeePage() {
   const router = useRouter()
@@ -45,6 +48,7 @@ export default function AddEmployeePage() {
 
   useEffect(() => {
     let alive = true
+
     ;(async () => {
       setLoading(true)
       const results = await Promise.all([
@@ -58,63 +62,68 @@ export default function AddEmployeePage() {
       ])
 
       if (!alive) return
-      const [d, des, et, js, wm, wl, sh] = results
-      if (!d.ok) showToast(`Departments: ${d.error}`, 'error')
-      if (!des.ok) showToast(`Designations: ${des.error}`, 'error')
-      if (!et.ok) showToast(`Employment types: ${et.error}`, 'error')
-      if (!js.ok) showToast(`Job statuses: ${js.error}`, 'error')
-      if (!wm.ok) showToast(`Work modes: ${wm.error}`, 'error')
-      if (!wl.ok) showToast(`Work locations: ${wl.error}`, 'error')
-      if (!sh.ok) showToast(`Shifts: ${sh.error}`, 'error')
 
-      setDepartments(d.ok ? d.data : [])
-      setDesignations(des.ok ? des.data : [])
-      setEmploymentTypes(et.ok ? et.data : [])
-      setJobStatuses(js.ok ? js.data : [])
-      setWorkModes(wm.ok ? wm.data : [])
-      setWorkLocations(wl.ok ? wl.data : [])
-      setShifts(sh.ok ? sh.data : [])
+      const [departmentRes, designationRes, employmentTypeRes, jobStatusRes, workModeRes, workLocationRes, shiftRes] = results
+
+      if (!departmentRes.ok) showToast(`Departments: ${departmentRes.error}`, 'error')
+      if (!designationRes.ok) showToast(`Designations: ${designationRes.error}`, 'error')
+      if (!employmentTypeRes.ok) showToast(`Employment types: ${employmentTypeRes.error}`, 'error')
+      if (!jobStatusRes.ok) showToast(`Job statuses: ${jobStatusRes.error}`, 'error')
+      if (!workModeRes.ok) showToast(`Work modes: ${workModeRes.error}`, 'error')
+      if (!workLocationRes.ok) showToast(`Work locations: ${workLocationRes.error}`, 'error')
+      if (!shiftRes.ok) showToast(`Shifts: ${shiftRes.error}`, 'error')
+
+      setDepartments(departmentRes.ok ? departmentRes.data : [])
+      setDesignations(designationRes.ok ? designationRes.data : [])
+      setEmploymentTypes(employmentTypeRes.ok ? employmentTypeRes.data : [])
+      setJobStatuses(jobStatusRes.ok ? jobStatusRes.data : [])
+      setWorkModes(workModeRes.ok ? workModeRes.data : [])
+      setWorkLocations(workLocationRes.ok ? workLocationRes.data : [])
+      setShifts(shiftRes.ok ? shiftRes.data : [])
       setLoading(false)
     })()
+
     return () => {
       alive = false
     }
   }, [showToast])
 
-  const canSubmit = useMemo(() => {
-    return (
-      employee_id.trim() &&
-      name.trim() &&
-      father_name.trim() &&
-      cnic.trim() &&
-      date_of_birth &&
-      department_id &&
-      designation_id &&
-      employment_type_id &&
-      job_status_id &&
-      work_mode_id &&
-      work_location_id &&
-      shift_id &&
-      date_of_joining
-    )
-  }, [
-    employee_id,
-    name,
-    father_name,
-    cnic,
-    date_of_birth,
-    department_id,
-    designation_id,
-    employment_type_id,
-    job_status_id,
-    work_mode_id,
-    work_location_id,
-    shift_id,
-    date_of_joining,
-  ])
+  const canSubmit = useMemo(
+    () =>
+      Boolean(
+        employee_id.trim() &&
+          name.trim() &&
+          father_name.trim() &&
+          cnic.trim() &&
+          date_of_birth &&
+          department_id &&
+          designation_id &&
+          employment_type_id &&
+          job_status_id &&
+          work_mode_id &&
+          work_location_id &&
+          shift_id &&
+          date_of_joining
+      ),
+    [
+      cnic,
+      date_of_birth,
+      date_of_joining,
+      department_id,
+      designation_id,
+      employee_id,
+      employment_type_id,
+      father_name,
+      job_status_id,
+      name,
+      shift_id,
+      work_location_id,
+      work_mode_id,
+    ]
+  )
 
-  const onSave = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const onSave = async (event: React.FormEvent) => {
+    event.preventDefault()
     if (!canSubmit) {
       showToast('Please fill all required fields', 'error')
       return
@@ -122,19 +131,18 @@ export default function AddEmployeePage() {
 
     setSaving(true)
 
-    // Step 1: employee_info
-    const empRes = await apiFetch<any>('/employees', {
+    const employeeRes = await apiFetch<EmployeeCreateResponse>('/employees', {
       method: 'POST',
       body: { employee_id: employee_id.trim(), name: name.trim(), father_name: father_name.trim(), cnic: cnic.trim(), date_of_birth },
     })
-    if (!empRes.ok) {
+
+    if (!employeeRes.ok) {
       setSaving(false)
-      showToast(empRes.error, 'error')
+      showToast(employeeRes.error, 'error')
       return
     }
 
-    // Step 2: job_info
-    const jobRes = await apiFetch<any>('/job-info', {
+    const jobRes = await apiFetch<JobInfoCreateResponse>('/job-info', {
       method: 'POST',
       body: {
         employee_id: employee_id.trim(),
@@ -162,171 +170,177 @@ export default function AddEmployeePage() {
   }
 
   return (
-    <div>
-      <div className="pg-head">
-        <div>
-          <div className="pg-greet">Add Employee</div>
-          <div className="pg-sub">Two-step creation: Employee Info → Job Info</div>
+    <div className="section-grid">
+      <div>
+        <div className="pg-head">
+          <div>
+            <div className="pg-greet">Add Employee</div>
+            <div className="pg-sub">Two-step creation: employee info followed by job info</div>
+          </div>
+          <button className="btn btn-ghost" onClick={() => router.push('/employees')}>
+            Back
+          </button>
         </div>
-        <button className="btn btn-ghost" onClick={() => router.push('/employees')}>
-          Back
-        </button>
+
+        {loading ? (
+          <div className="card">Loading configuration...</div>
+        ) : (
+          <form onSubmit={onSave} className="section-grid">
+            <div className="card">
+              <div style={{ fontWeight: 900, marginBottom: 10 }}>Employee Info</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
+                    employee_id (EMP###)
+                  </label>
+                  <input className="input" value={employee_id} onChange={(event) => setEmployeeId(event.target.value)} placeholder="EMP123" />
+                </div>
+                <div>
+                  <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
+                    name
+                  </label>
+                  <input className="input" value={name} onChange={(event) => setName(event.target.value)} placeholder="Full name" />
+                </div>
+                <div>
+                  <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
+                    father_name
+                  </label>
+                  <input className="input" value={father_name} onChange={(event) => setFatherName(event.target.value)} placeholder="Father name" />
+                </div>
+                <div>
+                  <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
+                    cnic
+                  </label>
+                  <input className="input" value={cnic} onChange={(event) => setCnic(event.target.value)} placeholder="CNIC" />
+                </div>
+                <div>
+                  <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
+                    date_of_birth
+                  </label>
+                  <input className="input" type="date" value={date_of_birth} onChange={(event) => setDob(event.target.value)} />
+                </div>
+              </div>
+            </div>
+
+            <div className="card">
+              <div style={{ fontWeight: 900, marginBottom: 10 }}>Job Info</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
+                    department
+                  </label>
+                  <select className="input" value={department_id} onChange={(event) => setDepartmentId(event.target.value)}>
+                    <option value="">Select...</option>
+                    {departments.map((department) => (
+                      <option key={department.id} value={department.id}>
+                        {department.department_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
+                    designation
+                  </label>
+                  <select className="input" value={designation_id} onChange={(event) => setDesignationId(event.target.value)}>
+                    <option value="">Select...</option>
+                    {designations.map((designation) => (
+                      <option key={designation.id} value={designation.id}>
+                        {designation.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
+                    employment type
+                  </label>
+                  <select className="input" value={employment_type_id} onChange={(event) => setEmploymentTypeId(event.target.value)}>
+                    <option value="">Select...</option>
+                    {employmentTypes.map((employmentType) => (
+                      <option key={employmentType.id} value={employmentType.id}>
+                        {employmentType.type_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
+                    job status
+                  </label>
+                  <select className="input" value={job_status_id} onChange={(event) => setJobStatusId(event.target.value)}>
+                    <option value="">Select...</option>
+                    {jobStatuses.map((jobStatus) => (
+                      <option key={jobStatus.id} value={jobStatus.id}>
+                        {jobStatus.status_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
+                    work mode
+                  </label>
+                  <select className="input" value={work_mode_id} onChange={(event) => setWorkModeId(event.target.value)}>
+                    <option value="">Select...</option>
+                    {workModes.map((workMode) => (
+                      <option key={workMode.id} value={workMode.id}>
+                        {workMode.mode_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
+                    work location
+                  </label>
+                  <select className="input" value={work_location_id} onChange={(event) => setWorkLocationId(event.target.value)}>
+                    <option value="">Select...</option>
+                    {workLocations.map((workLocation) => (
+                      <option key={workLocation.id} value={workLocation.id}>
+                        {workLocation.location_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
+                    shift
+                  </label>
+                  <select className="input" value={shift_id} onChange={(event) => setShiftId(event.target.value)}>
+                    <option value="">Select...</option>
+                    {shifts.map((shift) => (
+                      <option key={shift.id} value={shift.id}>
+                        {shift.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
+                    date_of_joining
+                  </label>
+                  <input className="input" type="date" value={date_of_joining} onChange={(event) => setDoj(event.target.value)} />
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button type="button" className="btn btn-secondary" onClick={() => router.push('/employees')}>
+                Cancel
+              </button>
+              <button type="submit" className="btn btn-primary" disabled={saving}>
+                {saving ? 'Saving...' : 'Save Employee'}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
 
-      {loading ? (
-        <div className="card">Loading configuration…</div>
-      ) : (
-        <form onSubmit={onSave} style={{ display: 'grid', gap: 12 }}>
-          <div className="card">
-            <div style={{ fontWeight: 900, marginBottom: 10 }}>Employee Info</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div>
-                <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
-                  employee_id (EMP###)
-                </label>
-                <input className="input" value={employee_id} onChange={(e) => setEmployeeId(e.target.value)} placeholder="EMP123" />
-              </div>
-              <div>
-                <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
-                  name
-                </label>
-                <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" />
-              </div>
-              <div>
-                <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
-                  father_name
-                </label>
-                <input className="input" value={father_name} onChange={(e) => setFatherName(e.target.value)} placeholder="Father name" />
-              </div>
-              <div>
-                <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
-                  cnic
-                </label>
-                <input className="input" value={cnic} onChange={(e) => setCnic(e.target.value)} placeholder="CNIC" />
-              </div>
-              <div>
-                <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
-                  date_of_birth
-                </label>
-                <input className="input" type="date" value={date_of_birth} onChange={(e) => setDob(e.target.value)} />
-              </div>
-            </div>
-          </div>
-
-          <div className="card">
-            <div style={{ fontWeight: 900, marginBottom: 10 }}>Job Info</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div>
-                <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
-                  department
-                </label>
-                <select className="input" value={department_id} onChange={(e) => setDepartmentId(e.target.value)}>
-                  <option value="">Select…</option>
-                  {departments.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.department_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
-                  designation
-                </label>
-                <select className="input" value={designation_id} onChange={(e) => setDesignationId(e.target.value)}>
-                  <option value="">Select…</option>
-                  {designations.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
-                  employment type
-                </label>
-                <select className="input" value={employment_type_id} onChange={(e) => setEmploymentTypeId(e.target.value)}>
-                  <option value="">Select…</option>
-                  {employmentTypes.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.type_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
-                  job status
-                </label>
-                <select className="input" value={job_status_id} onChange={(e) => setJobStatusId(e.target.value)}>
-                  <option value="">Select…</option>
-                  {jobStatuses.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.status_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
-                  work mode
-                </label>
-                <select className="input" value={work_mode_id} onChange={(e) => setWorkModeId(e.target.value)}>
-                  <option value="">Select…</option>
-                  {workModes.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.mode_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
-                  work location
-                </label>
-                <select className="input" value={work_location_id} onChange={(e) => setWorkLocationId(e.target.value)}>
-                  <option value="">Select…</option>
-                  {workLocations.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.location_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
-                  shift
-                </label>
-                <select className="input" value={shift_id} onChange={(e) => setShiftId(e.target.value)}>
-                  <option value="">Select…</option>
-                  {shifts.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
-                  date_of_joining
-                </label>
-                <input className="input" type="date" value={date_of_joining} onChange={(e) => setDoj(e.target.value)} />
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-            <button type="button" className="btn btn-secondary" onClick={() => router.push('/employees')}>
-              Cancel
-            </button>
-            <button type="submit" className="btn btn-primary" disabled={saving}>
-              {saving ? 'Saving…' : 'Save Employee'}
-            </button>
-          </div>
-        </form>
-      )}
+      <ComingSoonCard
+        title="Documents and onboarding artifacts"
+        description="Document upload, signed forms, and employee-file attachments are not wired yet for this flow."
+      />
     </div>
   )
 }
-

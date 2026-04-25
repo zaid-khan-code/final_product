@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, Zap } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
@@ -8,7 +8,7 @@ import { useToast } from '@/contexts/ToastContext'
 
 export default function LoginPage() {
   const router = useRouter()
-  const { session, login, isEmployee } = useAuth()
+  const { ready, session, login, isEmployee } = useAuth()
   const { showToast } = useToast()
 
   const [email, setEmail] = useState('')
@@ -16,10 +16,13 @@ export default function LoginPage() {
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  if (session) {
+  useEffect(() => {
+    if (!ready || !session) return
     router.replace(isEmployee ? '/me/dashboard' : '/launchpad')
-    return null
-  }
+  }, [isEmployee, ready, router, session])
+
+  if (!ready) return null
+  if (session) return null
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -30,8 +33,9 @@ export default function LoginPage() {
       showToast(res.error, 'error')
       return
     }
+
     showToast('Login successful', 'success')
-    router.replace('/'); // root will redirect based on role
+    router.replace('/')
   }
 
   return (
@@ -100,4 +104,3 @@ export default function LoginPage() {
     </div>
   )
 }
-

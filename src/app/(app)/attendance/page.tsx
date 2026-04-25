@@ -1,8 +1,9 @@
 'use client'
 
 import React, { useEffect, useMemo, useState } from 'react'
-import { apiFetch } from '@/lib/api'
+import ComingSoonCard from '@/components/ComingSoonCard'
 import { useToast } from '@/contexts/ToastContext'
+import { apiFetch } from '@/lib/api'
 
 type DailyRow = {
   employee_id: string
@@ -25,6 +26,7 @@ type DailyRow = {
 }
 
 type EditRow = DailyRow & { dirty?: boolean }
+type BatchSaveResponse = { saved: number; records: DailyRow[] }
 
 const statusOptions: Array<DailyRow['status']> = ['present', 'late', 'half_day', 'on_leave', 'absent']
 
@@ -33,54 +35,62 @@ export default function AttendancePage() {
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0)
   const [rows, setRows] = useState<EditRow[]>([])
 
-  const load = async () => {
-    setLoading(true)
-    const res = await apiFetch<DailyRow[]>(`/attendance/daily?date=${encodeURIComponent(date)}`)
-    setLoading(false)
-    if (!res.ok) {
-      showToast(res.error, 'error')
-      return
-    }
-    setRows(res.data.map((r) => ({ ...r, dirty: false })))
-  }
-
   useEffect(() => {
+    let active = true
+
+    const load = async () => {
+      setLoading(true)
+      const res = await apiFetch<DailyRow[]>(`/attendance/daily?date=${encodeURIComponent(date)}`)
+      if (!active) return
+
+      setLoading(false)
+      if (!res.ok) {
+        showToast(res.error, 'error')
+        return
+      }
+      setRows(res.data.map((row) => ({ ...row, dirty: false })))
+    }
+
     void load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [date])
 
-  const dirtyCount = useMemo(() => rows.filter((r) => r.dirty).length, [rows])
+    return () => {
+      active = false
+    }
+  }, [date, reloadKey, showToast])
 
-  const setField = (empId: string, patch: Partial<EditRow>) => {
+  const dirtyCount = useMemo(() => rows.filter((row) => row.dirty).length, [rows])
+
+  const setField = (employeeId: string, patch: Partial<EditRow>) => {
     setRows((prev) =>
-      prev.map((r) => {
-        if (r.employee_id !== empId) return r
-        return { ...r, ...patch, dirty: true }
+      prev.map((row) => {
+        if (row.employee_id !== employeeId) return row
+        return { ...row, ...patch, dirty: true }
       })
     )
   }
 
   const onSave = async () => {
-    const dirty = rows.filter((r) => r.dirty && !r.notes_readonly)
+    const dirty = rows.filter((row) => row.dirty && !row.notes_readonly)
     if (dirty.length === 0) {
       showToast('No changes to save', 'info')
       return
     }
 
     setSaving(true)
-    const res = await apiFetch<{ saved: number; records: any[] }>('/attendance/batch', {
+    const res = await apiFetch<BatchSaveResponse>('/attendance/batch', {
       method: 'POST',
       body: {
         date,
-        rows: dirty.map((r) => ({
-          employee_id: r.employee_id,
-          shift_id: r.shift_id,
-          check_in: r.check_in,
-          check_out: r.check_out,
-          status: r.status,
-          notes: r.notes,
+        rows: dirty.map((row) => ({
+          employee_id: row.employee_id,
+          shift_id: row.shift_id,
+          check_in: row.check_in,
+          check_out: row.check_out,
+          status: row.status,
+          notes: row.notes,
         })),
       },
     })
@@ -92,117 +102,129 @@ export default function AttendancePage() {
     }
 
     showToast(`Saved ${res.data.saved} row(s)`, 'success')
-    await load()
+    setReloadKey((current) => current + 1)
   }
 
   return (
-    <div>
-      <div className="pg-head">
-        <div>
-          <div className="pg-greet">Attendance</div>
-          <div className="pg-sub">Daily sheet (edit grid → batch save)</div>
+    <div className="section-grid">
+      <div>
+        <div className="pg-head">
+          <div>
+            <div className="pg-greet">Attendance</div>
+            <div className="pg-sub">Daily sheet for HR review and batch save</div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <input className="input" type="date" value={date} onChange={(event) => setDate(event.target.value)} style={{ width: 160 }} />
+            <button className="btn btn-primary" onClick={onSave} disabled={saving}>
+              {saving ? 'Saving...' : `Save (${dirtyCount})`}
+            </button>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <input className="input" type="date" value={date} onChange={(e) => setDate(e.target.value)} style={{ width: 160 }} />
-          <button className="btn btn-primary" onClick={onSave} disabled={saving}>
-            {saving ? 'Saving…' : `Save (${dirtyCount})`}
-          </button>
-        </div>
-      </div>
 
-      <div className="card">
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Emp</th>
-                <th>Name</th>
-                <th>Shift</th>
-                <th>Status</th>
-                <th>Check In</th>
-                <th>Check Out</th>
-                <th>Ack</th>
-                <th>Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
+        <div className="card">
+          <div className="table-wrap">
+            <table>
+              <thead>
                 <tr>
-                  <td colSpan={8} style={{ padding: 24, textAlign: 'center', color: 'var(--t3)' }}>
-                    Loading…
-                  </td>
+                  <th>Emp</th>
+                  <th>Name</th>
+                  <th>Shift</th>
+                  <th>Status</th>
+                  <th>Check In</th>
+                  <th>Check Out</th>
+                  <th>Ack</th>
+                  <th>Notes</th>
                 </tr>
-              ) : rows.length === 0 ? (
-                <tr>
-                  <td colSpan={8} style={{ padding: 24, textAlign: 'center', color: 'var(--t3)' }}>
-                    No employees match filters for this date.
-                  </td>
-                </tr>
-              ) : (
-                rows.map((r) => (
-                  <tr key={r.employee_id} style={r.dirty ? { background: 'var(--pl)' } : undefined}>
-                    <td className="mono">{r.employee_id}</td>
-                    <td style={{ fontWeight: 800 }}>{r.name}</td>
-                    <td style={{ fontSize: 11.5 }}>
-                      {r.shift_name}
-                      <div className="mono" style={{ fontSize: 10, color: 'var(--t3)', marginTop: 2 }}>
-                        {r.expected_in} → {r.end_time}
-                      </div>
-                    </td>
-                    <td>
-                      <select className="input" style={{ padding: '6px 8px' }} disabled={r.notes_readonly} value={r.status} onChange={(e) => setField(r.employee_id, { status: e.target.value as any })}>
-                        {statusOptions.map((s) => (
-                          <option key={s} value={s}>
-                            {s}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td>
-                      <input
-                        className="input mono"
-                        style={{ padding: '6px 8px' }}
-                        disabled={r.notes_readonly}
-                        value={r.check_in ?? ''}
-                        placeholder="HH:MM"
-                        onChange={(e) => setField(r.employee_id, { check_in: e.target.value || null })}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        className="input mono"
-                        style={{ padding: '6px 8px' }}
-                        disabled={r.notes_readonly}
-                        value={r.check_out ?? ''}
-                        placeholder="HH:MM"
-                        onChange={(e) => setField(r.employee_id, { check_out: e.target.value || null })}
-                      />
-                    </td>
-                    <td className="mono" style={{ color: r.ack ? 'var(--green)' : 'var(--t3)', fontWeight: 900 }}>
-                      {r.attendance_id ? (r.ack ? 'ACK' : 'NO') : '-'}
-                    </td>
-                    <td>
-                      <input
-                        className="input"
-                        style={{ padding: '6px 8px' }}
-                        disabled={r.notes_readonly}
-                        value={r.notes ?? ''}
-                        placeholder={r.notes_readonly ? 'On approved leave' : 'Optional…'}
-                        onChange={(e) => setField(r.employee_id, { notes: e.target.value || null })}
-                      />
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={8} style={{ padding: 24, textAlign: 'center', color: 'var(--t3)' }}>
+                      Loading...
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : rows.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} style={{ padding: 24, textAlign: 'center', color: 'var(--t3)' }}>
+                      No employees match filters for this date.
+                    </td>
+                  </tr>
+                ) : (
+                  rows.map((row) => (
+                    <tr key={row.employee_id} style={row.dirty ? { background: 'var(--pl)' } : undefined}>
+                      <td className="mono">{row.employee_id}</td>
+                      <td style={{ fontWeight: 800 }}>{row.name}</td>
+                      <td style={{ fontSize: 11.5 }}>
+                        {row.shift_name}
+                        <div className="mono" style={{ fontSize: 10, color: 'var(--t3)', marginTop: 2 }}>
+                          {row.expected_in} → {row.end_time}
+                        </div>
+                      </td>
+                      <td>
+                        <select
+                          className="input"
+                          style={{ padding: '6px 8px' }}
+                          disabled={row.notes_readonly}
+                          value={row.status}
+                          onChange={(event) => setField(row.employee_id, { status: event.target.value as DailyRow['status'] })}
+                        >
+                          {statusOptions.map((status) => (
+                            <option key={status} value={status}>
+                              {status}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td>
+                        <input
+                          className="input mono"
+                          style={{ padding: '6px 8px' }}
+                          disabled={row.notes_readonly}
+                          value={row.check_in ?? ''}
+                          placeholder="HH:MM"
+                          onChange={(event) => setField(row.employee_id, { check_in: event.target.value || null })}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          className="input mono"
+                          style={{ padding: '6px 8px' }}
+                          disabled={row.notes_readonly}
+                          value={row.check_out ?? ''}
+                          placeholder="HH:MM"
+                          onChange={(event) => setField(row.employee_id, { check_out: event.target.value || null })}
+                        />
+                      </td>
+                      <td className="mono" style={{ color: row.ack ? 'var(--green)' : 'var(--t3)', fontWeight: 900 }}>
+                        {row.attendance_id ? (row.ack ? 'ACK' : 'NO') : '-'}
+                      </td>
+                      <td>
+                        <input
+                          className="input"
+                          style={{ padding: '6px 8px' }}
+                          disabled={row.notes_readonly}
+                          value={row.notes ?? ''}
+                          placeholder={row.notes_readonly ? 'On approved leave' : 'Optional...'}
+                          onChange={(event) => setField(row.employee_id, { notes: event.target.value || null })}
+                        />
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
 
-        <div style={{ marginTop: 10, color: 'var(--t3)', fontSize: 11.5 }}>
-          Note: “Ack” is the employee’s digital signature. HR cannot acknowledge.
+          <div style={{ marginTop: 10, color: 'var(--t3)', fontSize: 11.5 }}>
+            Note: &quot;Ack&quot; is the employee&apos;s digital signature. HR cannot acknowledge attendance on their behalf.
+          </div>
         </div>
       </div>
+
+      <ComingSoonCard
+        title="Penalty automation"
+        description="Attendance-linked penalties and disciplinary automation are intentionally held for a later backend phase."
+      />
     </div>
   )
 }
-

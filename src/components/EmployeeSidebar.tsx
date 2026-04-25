@@ -2,10 +2,10 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { CalendarCheck, CalendarDays, LayoutDashboard, LogOut, User, Zap } from 'lucide-react'
+import { CalendarCheck, CalendarDays, LayoutDashboard, LogOut, type LucideIcon, User, Zap } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
-function NavItem({ href, label, Icon }: { href: string; label: string; Icon: any }) {
+function NavItem({ href, label, Icon }: { href: string; label: string; Icon: LucideIcon }) {
   const pathname = usePathname()
   const active = pathname === href || pathname.startsWith(`${href}/`)
   return (
@@ -57,7 +57,7 @@ export default function EmployeeSidebar() {
 
       <div className="sb-bottom">
         <div className="sb-user">
-          <div className="sb-chip" onClick={logout} title="Logout">
+          <div className="sb-chip" onClick={() => void logout()} title="Logout">
             <div className="sb-av">{session?.user.email?.slice(0, 2).toUpperCase() ?? 'ME'}</div>
             <div>
               <div className="sb-un">{session?.user.email ?? 'Employee'}</div>
@@ -70,4 +70,3 @@ export default function EmployeeSidebar() {
     </div>
   )
 }
-
