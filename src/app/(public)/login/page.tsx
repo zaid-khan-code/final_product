@@ -94,7 +94,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div style={{ marginTop: 18, padding: 12, background: 'var(--inp)', borderRadius: 'var(--rsm)', fontSize: 11, color: 'var(--t3)' }}>
+        <div style={{ marginTop: 18, padding: 12, background: 'var(--inp)', borderRadius: 'var(--radius-sm)', fontSize: 11, color: 'var(--t3)' }}>
           <div style={{ fontWeight: 800, marginBottom: 6, color: 'var(--t2)' }}>Seed Accounts</div>
           <div className="mono" style={{ fontSize: 10.5 }}>
             Use the seeded emails/passwords from your backend dev seed.

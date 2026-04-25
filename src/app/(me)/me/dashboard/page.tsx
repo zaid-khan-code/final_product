@@ -1,5 +1,7 @@
 import ComingSoonCard from '@/components/ComingSoonCard'
 import MyDashboardActions from '@/components/MyDashboardActions'
+import { Card } from '@/components/ui/Card'
+import { TableShell } from '@/components/ui/TableShell'
 import { getSessionUserFromCookies } from '@/lib/auth'
 import { serverFetchBackendJson } from '@/lib/backend'
 import { redirect } from 'next/navigation'
@@ -137,7 +139,7 @@ export default async function MyDashboardPage() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
-        <div className="card">
+        <Card>
           <div className="mono" style={{ fontSize: 11, color: 'var(--t3)' }}>
             Employee ID
           </div>
@@ -145,9 +147,9 @@ export default async function MyDashboardPage() {
             {employeeId}
           </div>
           <div style={{ marginTop: 8, color: 'var(--t3)', fontSize: 12 }}>{job?.designation_title ?? 'Designation pending'}</div>
-        </div>
+        </Card>
 
-        <div className="card">
+        <Card>
           <div className="mono" style={{ fontSize: 11, color: 'var(--t3)' }}>
             Today&apos;s Attendance
           </div>
@@ -155,9 +157,9 @@ export default async function MyDashboardPage() {
           <div style={{ marginTop: 8, color: 'var(--t3)', fontSize: 12 }}>
             {attendance?.shift_name ? `Shift: ${attendance.shift_name}` : 'Shift not assigned'}
           </div>
-        </div>
+        </Card>
 
-        <div className="card">
+        <Card>
           <div className="mono" style={{ fontSize: 11, color: 'var(--t3)' }}>
             Present Days This Month
           </div>
@@ -167,9 +169,9 @@ export default async function MyDashboardPage() {
           <div style={{ marginTop: 8, color: 'var(--t3)', fontSize: 12 }}>
             Attendance: {monthlyAttendance?.attendance_pct ?? 0}%
           </div>
-        </div>
+        </Card>
 
-        <div className="card">
+        <Card>
           <div className="mono" style={{ fontSize: 11, color: 'var(--t3)' }}>
             Pending Leave Requests
           </div>
@@ -177,12 +179,12 @@ export default async function MyDashboardPage() {
           <div style={{ marginTop: 8, color: 'var(--t3)', fontSize: 12 }}>
             {balanceRow?.balances.length ? `${balanceRow.balances.length} leave wallet(s) active` : 'No leave balances yet'}
           </div>
-        </div>
+        </Card>
       </div>
 
       <div className="section-grid">
         <div style={{ display: 'grid', gap: 12 }}>
-          <div className="card">
+          <Card>
             <div style={{ fontWeight: 900, marginBottom: 10 }}>Profile & Job Snapshot</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
               <div>
@@ -224,7 +226,7 @@ export default async function MyDashboardPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </Card>
 
           <MyDashboardActions
             employeeId={employeeId}
@@ -235,7 +237,7 @@ export default async function MyDashboardPage() {
         </div>
 
         <div style={{ display: 'grid', gap: 12 }}>
-          <div className="card">
+          <Card>
             <div style={{ fontWeight: 900, marginBottom: 10 }}>Leave Wallet</div>
             {!balanceRow?.balances.length ? (
               <div style={{ color: 'var(--t3)' }}>No leave balances available.</div>
@@ -253,14 +255,14 @@ export default async function MyDashboardPage() {
                 ))}
               </div>
             )}
-          </div>
+          </Card>
 
-          <div className="card">
+          <Card>
             <div style={{ fontWeight: 900, marginBottom: 10 }}>Pending Requests</div>
             {pendingRequests.length === 0 ? (
               <div style={{ color: 'var(--t3)' }}>No pending leave requests.</div>
             ) : (
-              <div className="table-wrap">
+              <TableShell>
                 <table>
                   <thead>
                     <tr>
@@ -285,11 +287,11 @@ export default async function MyDashboardPage() {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </TableShell>
             )}
-          </div>
+          </Card>
 
-          <div className="card">
+          <Card>
             <div style={{ fontWeight: 900, marginBottom: 10 }}>Calendar Preview</div>
             {upcomingEvents.length === 0 ? (
               <div style={{ color: 'var(--t3)' }}>No upcoming events this month.</div>
@@ -306,7 +308,7 @@ export default async function MyDashboardPage() {
                 ))}
               </div>
             )}
-          </div>
+          </Card>
 
           <ComingSoonCard
             title="My Team"

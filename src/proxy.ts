@@ -81,6 +81,7 @@ export const config = {
     '/attendance/:path*',
     '/leave/:path*',
     '/me/:path*',
+    '/config',
     '/config/:path*',
   ],
 }

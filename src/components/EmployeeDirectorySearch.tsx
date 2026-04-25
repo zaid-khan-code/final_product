@@ -3,6 +3,8 @@
 import React, { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Search } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
 
 type Suggestion = {
   employee_id: string
@@ -42,7 +44,7 @@ export default function EmployeeDirectorySearch({ initialSearch, initialTab, sug
   }
 
   return (
-    <div className="card" style={{ marginBottom: 12 }}>
+    <Card style={{ marginBottom: 12 }}>
       <div style={{ position: 'relative' }}>
         <Search size={14} style={{ position: 'absolute', left: 10, top: 14, color: 'var(--t3)' }} />
         <input
@@ -63,10 +65,9 @@ export default function EmployeeDirectorySearch({ initialSearch, initialTab, sug
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: 10, alignItems: 'center' }}>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {filteredSuggestions.map((item) => (
-            <button
+            <Button
               key={item.employee_id}
-              type="button"
-              className="btn btn-secondary"
+              variant="secondary"
               style={{ padding: '6px 10px' }}
               onClick={() => {
                 setSearch(item.employee_id)
@@ -74,18 +75,18 @@ export default function EmployeeDirectorySearch({ initialSearch, initialTab, sug
               }}
             >
               <span className="mono">{item.employee_id}</span> {item.name}
-            </button>
+            </Button>
           ))}
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button type="button" className="btn btn-secondary" onClick={() => goToSearch('')}>
+          <Button variant="secondary" onClick={() => goToSearch('')}>
             Clear
-          </button>
-          <button type="button" className="btn btn-primary" onClick={() => goToSearch(search)}>
+          </Button>
+          <Button variant="primary" onClick={() => goToSearch(search)}>
             Search
-          </button>
+          </Button>
         </div>
       </div>
-    </div>
+    </Card>
   )
 }

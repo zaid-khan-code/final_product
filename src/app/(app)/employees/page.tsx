@@ -1,6 +1,8 @@
-import Link from 'next/link'
 import ComingSoonCard from '@/components/ComingSoonCard'
 import EmployeeDirectorySearch from '@/components/EmployeeDirectorySearch'
+import { Button, ButtonLink } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
+import { TableShell } from '@/components/ui/TableShell'
 import { serverFetchBackendJson } from '@/lib/backend'
 
 type SearchParamsValue = string | string[] | undefined
@@ -160,9 +162,9 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
           <div className="pg-greet">Employees</div>
           <div className="pg-sub">URL-driven employee directory with lazy detail tabs.</div>
         </div>
-        <Link href="/employees/add" className="btn btn-primary">
+        <ButtonLink href="/employees/add" variant="primary">
           Add Employee
-        </Link>
+        </ButtonLink>
       </div>
 
       <EmployeeDirectorySearch
@@ -171,7 +173,7 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
         suggestions={baseEmployees.map((item) => ({ employee_id: item.employee_id, name: item.name }))}
       />
 
-      <div className="card" style={{ marginBottom: 12 }}>
+      <Card style={{ marginBottom: 12 }}>
         <form action="/employees" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
           <input type="hidden" name="search" value={search} />
           <input type="hidden" name="tab" value={activeTab} />
@@ -218,15 +220,15 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
             <option value="terminated">Terminated / resigned</option>
           </select>
 
-          <button className="btn btn-secondary" type="submit">
+          <Button variant="secondary" type="submit">
             Apply Filters
-          </button>
+          </Button>
         </form>
-      </div>
+      </Card>
 
       {activeMatch ? (
         <div style={{ display: 'grid', gap: 12 }}>
-          <div className="card">
+          <Card>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
               <div>
                 <div className="pg-greet" style={{ fontSize: 20 }}>
@@ -238,20 +240,20 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {['personal', 'job-info', 'attendance', 'leave', 'medical', 'payslips', 'promotions', 'penalties', 'activity', 'documents'].map((tab) => (
-                  <Link
+                  <ButtonLink
                     key={tab}
                     href={`/employees?search=${encodeURIComponent(activeMatch.employee.employee_id)}&tab=${encodeURIComponent(tab)}`}
-                    className={`btn ${activeTab === tab ? 'btn-primary' : 'btn-secondary'}`}
+                    variant={activeTab === tab ? 'primary' : 'secondary'}
                   >
                     {tab}
-                  </Link>
+                  </ButtonLink>
                 ))}
               </div>
             </div>
-          </div>
+          </Card>
 
           {activeTab === 'personal' ? (
-            <div className="card">
+            <Card>
               <div style={{ fontWeight: 900, marginBottom: 10 }}>Personal</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
                 <div>
@@ -287,11 +289,11 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
                   </div>
                 </div>
               </div>
-            </div>
+            </Card>
           ) : null}
 
           {activeTab === 'job-info' ? (
-            <div className="card">
+            <Card>
               <div style={{ fontWeight: 900, marginBottom: 10 }}>Job Info</div>
               {!activeJob ? (
                 <div style={{ color: 'var(--t3)' }}>No job info found for this employee.</div>
@@ -349,12 +351,12 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
                   </div>
                 </div>
               )}
-            </div>
+            </Card>
           ) : null}
 
           {activeTab === 'attendance' ? (
             <div style={{ display: 'grid', gap: 12 }}>
-              <div className="card">
+              <Card>
                 <div style={{ fontWeight: 900, marginBottom: 10 }}>Today&apos;s Attendance</div>
                 {!activeDaily ? (
                   <div style={{ color: 'var(--t3)' }}>No attendance row returned for today.</div>
@@ -388,47 +390,47 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
                     </div>
                   </div>
                 )}
-              </div>
+              </Card>
 
-              <div className="card">
+              <Card>
                 <div style={{ fontWeight: 900, marginBottom: 10 }}>Monthly Attendance Summary</div>
                 {!activeMonthly ? (
                   <div style={{ color: 'var(--t3)' }}>No monthly attendance summary found for the selected employee.</div>
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
-                    <div className="card" style={{ padding: 12 }}>
+                    <Card style={{ padding: 12 }}>
                       <div className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
                         presents
                       </div>
                       <div style={{ fontSize: 20, fontWeight: 900 }}>{activeMonthly.presents}</div>
-                    </div>
-                    <div className="card" style={{ padding: 12 }}>
+                    </Card>
+                    <Card style={{ padding: 12 }}>
                       <div className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
                         absents
                       </div>
                       <div style={{ fontSize: 20, fontWeight: 900 }}>{activeMonthly.absents}</div>
-                    </div>
-                    <div className="card" style={{ padding: 12 }}>
+                    </Card>
+                    <Card style={{ padding: 12 }}>
                       <div className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
                         lates
                       </div>
                       <div style={{ fontSize: 20, fontWeight: 900 }}>{activeMonthly.lates}</div>
-                    </div>
-                    <div className="card" style={{ padding: 12 }}>
+                    </Card>
+                    <Card style={{ padding: 12 }}>
                       <div className="mono" style={{ fontSize: 10.5, color: 'var(--t3)' }}>
                         attendance %
                       </div>
                       <div style={{ fontSize: 20, fontWeight: 900 }}>{activeMonthly.attendance_pct ?? 0}</div>
-                    </div>
+                    </Card>
                   </div>
                 )}
-              </div>
+              </Card>
             </div>
           ) : null}
 
           {activeTab === 'leave' ? (
             <div style={{ display: 'grid', gap: 12 }}>
-              <div className="card">
+              <Card>
                 <div style={{ fontWeight: 900, marginBottom: 10 }}>Leave Balances</div>
                 {!activeBalances?.balances.length ? (
                   <div style={{ color: 'var(--t3)' }}>No leave balances found for this employee.</div>
@@ -446,14 +448,14 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
                     ))}
                   </div>
                 )}
-              </div>
+              </Card>
 
-              <div className="card">
+              <Card>
                 <div style={{ fontWeight: 900, marginBottom: 10 }}>Leave Requests</div>
                 {!leaveRequests?.length ? (
                   <div style={{ color: 'var(--t3)' }}>No leave requests found.</div>
                 ) : (
-                  <div className="table-wrap">
+                  <TableShell>
                     <table>
                       <thead>
                         <tr>
@@ -478,9 +480,9 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
                         ))}
                       </tbody>
                     </table>
-                  </div>
+                  </TableShell>
                 )}
-              </div>
+              </Card>
             </div>
           ) : null}
 
@@ -492,8 +494,8 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
           ) : null}
         </div>
       ) : (
-        <div className="card">
-          <div className="table-wrap">
+        <Card>
+          <TableShell>
             <table>
               <thead>
                 <tr>
@@ -527,17 +529,17 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
                       <td>{job?.job_status_name ?? '-'}</td>
                       <td className="mono">{job?.date_of_joining ?? '-'}</td>
                       <td>
-                        <Link href={`/employees?search=${encodeURIComponent(employee.employee_id)}&tab=personal`} className="btn btn-secondary">
+                        <ButtonLink href={`/employees?search=${encodeURIComponent(employee.employee_id)}&tab=personal`}>
                           Open
-                        </Link>
+                        </ButtonLink>
                       </td>
                     </tr>
                   ))
                 )}
               </tbody>
             </table>
-          </div>
-        </div>
+          </TableShell>
+        </Card>
       )}
     </div>
   )

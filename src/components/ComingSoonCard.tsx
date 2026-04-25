@@ -1,5 +1,8 @@
 'use client'
 
+import { Card } from '@/components/ui/Card'
+import { ComingSoonOverlay } from '@/components/ui/ComingSoonOverlay'
+
 type ComingSoonCardProps = {
   title: string
   description: string
@@ -7,13 +10,11 @@ type ComingSoonCardProps = {
 
 export default function ComingSoonCard({ title, description }: ComingSoonCardProps) {
   return (
-    <div className="card coming-soon-card">
+    <Card className="coming-soon-card">
       <div className="coming-soon-badge mono">COMING SOON</div>
       <div style={{ fontWeight: 900, marginBottom: 6 }}>{title}</div>
       <div style={{ color: 'var(--t3)', lineHeight: 1.45 }}>{description}</div>
-      <div className="coming-soon-overlay">
-        <div className="coming-soon-overlay__label mono">Unavailable in this phase</div>
-      </div>
-    </div>
+      <ComingSoonOverlay />
+    </Card>
   )
 }

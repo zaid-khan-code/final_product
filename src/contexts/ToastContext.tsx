@@ -1,6 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useMemo, useState } from 'react'
+import { Card } from '@/components/ui/Card'
 
 type Toast = { id: string; message: string; kind: 'info' | 'success' | 'error' }
 
@@ -39,28 +40,17 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         }}
       >
         {toasts.map((t) => (
-          <div
+          <Card
             key={t.id}
-            className="card"
+            className="toast-card"
             style={{
               padding: '10px 12px',
               minWidth: 260,
-              borderColor:
-                t.kind === 'error'
-                  ? 'rgba(183,28,28,.35)'
-                  : t.kind === 'success'
-                    ? 'rgba(27,122,78,.25)'
-                    : 'rgba(66,165,245,.25)',
-              background:
-                t.kind === 'error'
-                  ? 'var(--redl)'
-                  : t.kind === 'success'
-                    ? 'var(--greenl)'
-                    : 'var(--pl)',
             }}
+            data-kind={t.kind}
           >
             <div style={{ fontWeight: 800, color: 'var(--t2)', fontSize: 12.5 }}>{t.message}</div>
-          </div>
+          </Card>
         ))}
       </div>
     </ToastContext.Provider>
@@ -72,4 +62,3 @@ export function useToast() {
   if (!ctx) throw new Error('useToast must be used within ToastProvider')
   return ctx
 }
-

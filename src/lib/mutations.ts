@@ -1,4 +1,5 @@
 import { apiFetch } from '@/lib/api'
+export { getFieldIssueMessage } from '@/lib/mutation-errors'
 
 export class ApiMutationError extends Error {
   status: number

@@ -2,7 +2,10 @@
 
 import React, { useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { mutateJson, ApiMutationError } from '@/lib/mutations'
+import { mutateJson, ApiMutationError, getFieldIssueMessage } from '@/lib/mutations'
+import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
+import { Pill } from '@/components/ui/Pill'
 
 type LeaveType = {
   id: string
@@ -107,7 +110,7 @@ export default function MyDashboardActions({ employeeId, attendance, leaveTypes,
     },
     onError: (error) => {
       if (error instanceof ApiMutationError) {
-        setFormError(error.message)
+        setFormError(getFieldIssueMessage(error.details) ?? error.message)
         return
       }
 
@@ -129,7 +132,7 @@ export default function MyDashboardActions({ employeeId, attendance, leaveTypes,
 
   return (
     <div style={{ display: 'grid', gap: 12 }}>
-      <div className="card">
+      <Card>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
           <div>
             <div style={{ fontWeight: 900 }}>Attendance Acknowledgement</div>
@@ -139,14 +142,14 @@ export default function MyDashboardActions({ employeeId, attendance, leaveTypes,
           </div>
           {attendance?.attendance_id ? (
             attendance.ack ? (
-              <span className="pill">Acknowledged</span>
+              <Pill tone="success">Acknowledged</Pill>
             ) : (
-              <button className="btn btn-primary" disabled={ackMutation.isPending} onClick={() => ackMutation.mutate()}>
+              <Button variant="primary" disabled={ackMutation.isPending} onClick={() => ackMutation.mutate()}>
                 {ackMutation.isPending ? 'Saving...' : 'Acknowledge'}
-              </button>
+              </Button>
             )
           ) : (
-            <span className="pill">No record yet</span>
+            <Pill>No record yet</Pill>
           )}
         </div>
         {ackMutation.isError ? (
@@ -154,9 +157,9 @@ export default function MyDashboardActions({ employeeId, attendance, leaveTypes,
             {ackMutation.error instanceof Error ? ackMutation.error.message : 'Unable to acknowledge attendance.'}
           </div>
         ) : null}
-      </div>
+      </Card>
 
-      <div className="card">
+      <Card>
         <div style={{ fontWeight: 900, marginBottom: 10 }}>Apply Leave</div>
         <form onSubmit={onSubmit} style={{ display: 'grid', gap: 10 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -206,14 +209,14 @@ export default function MyDashboardActions({ employeeId, attendance, leaveTypes,
             <div style={{ fontSize: 12, color: 'var(--t3)' }}>
               {requestedDays ? `Requested duration: ${requestedDays} day(s)` : 'Select dates to calculate duration.'}
             </div>
-            <button className="btn btn-primary" disabled={leaveMutation.isPending || !leaveTypeId || !startDate || !endDate}>
+            <Button variant="primary" disabled={leaveMutation.isPending || !leaveTypeId || !startDate || !endDate}>
               {leaveMutation.isPending ? 'Submitting...' : 'Submit Request'}
-            </button>
+            </Button>
           </div>
 
           {formError ? <div style={{ color: 'var(--red)', fontSize: 12 }}>{formError}</div> : null}
         </form>
-      </div>
+      </Card>
     </div>
   )
 }

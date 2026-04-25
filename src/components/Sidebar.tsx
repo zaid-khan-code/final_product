@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { CalendarCheck, CalendarDays, LayoutDashboard, LogOut, type LucideIcon, Users, Zap } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { roleLabel } from '@/lib/roles'
+import { Button } from '@/components/ui/Button'
 
 function NavItem({ href, label, Icon }: { href: string; label: string; Icon: LucideIcon }) {
   const pathname = usePathname()
@@ -37,8 +38,8 @@ export default function Sidebar() {
           <div className="sb-env-dot" />
           <span className="sb-env-text">FINAL PRODUCT</span>
         </div>
-        <button
-          className="btn btn-sm"
+        <Button
+          size="sm"
           style={{
             marginTop: 12,
             width: '100%',
@@ -49,7 +50,7 @@ export default function Sidebar() {
           onClick={() => router.push('/launchpad')}
         >
           Apps Launchpad
-        </button>
+        </Button>
       </div>
 
       <div className="sb-sec">
