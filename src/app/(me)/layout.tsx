@@ -9,9 +9,19 @@ import { canUseSelfService } from '@/lib/session'
 export default function MeLayout({ children }: { children: React.ReactNode }) {
   const { ready, session } = useAuth()
 
-  if (!ready) return <div style={{ height: '100vh', display: 'grid', placeItems: 'center', color: 'var(--t3)' }}>Loading...</div>
-  if (!session) return null
-  if (!canUseSelfService(session.user)) return null
+  // While auth hydrates, show content without chrome — middleware already guards the route
+  if (!ready) {
+    return (
+      <div className="app-layout">
+        <div className="main-area">
+          <div className="page-content">{children}</div>
+        </div>
+      </div>
+    )
+  }
+
+  // Middleware should redirect before this, but guard as a fallback
+  if (!session || !canUseSelfService(session.user)) return null
 
   return (
     <div className="app-layout">

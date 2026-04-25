@@ -8,9 +8,19 @@ import { useAuth } from '@/contexts/AuthContext'
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { ready, session, isEmployee } = useAuth()
 
-  if (!ready) return <div style={{ height: '100vh', display: 'grid', placeItems: 'center', color: 'var(--t3)' }}>Loading...</div>
-  if (!session) return null
-  if (isEmployee) return null
+  // While auth hydrates, show content without chrome — middleware already guards the route
+  if (!ready) {
+    return (
+      <div className="app-layout">
+        <div className="main-area">
+          <div className="page-content">{children}</div>
+        </div>
+      </div>
+    )
+  }
+
+  // Middleware should redirect before this, but guard as a fallback
+  if (!session || isEmployee) return null
 
   return (
     <div className="app-layout">

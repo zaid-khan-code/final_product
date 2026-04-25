@@ -1,6 +1,11 @@
 import ComingSoonCard from '@/components/ComingSoonCard'
+import { getSessionUserFromCookies } from '@/lib/auth'
+import { redirect } from 'next/navigation'
 
-export default function ConfigPage() {
+export default async function ConfigPage() {
+  const user = await getSessionUserFromCookies()
+  if (!user?.is_super_admin) redirect('/launchpad')
+
   return (
     <div style={{ display: 'grid', gap: 12 }}>
       <div className="pg-head">
