@@ -84,7 +84,7 @@ export default function CompanyDirectory() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 10 }}>
                 {emps.map((e: any) => (
                   <div key={e.id} className="card" style={{ padding: '14px 16px', display: 'flex', gap: 12, alignItems: 'flex-start', transition: 'box-shadow .15s', cursor: 'default' }}>
-                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: colorFor(e.id), color: '#fff', display: 'flex', alignItems: 'center', justify-content: 'center', fontSize: 13, fontWeight: 700, flexShrink: 0 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: colorFor(e.id), color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, flexShrink: 0 }}>
                       {e.avatar}
                     </div>
                     <div style={{ minWidth: 0 }}>
@@ -125,7 +125,7 @@ export default function CompanyDirectory() {
                     <td className="mono" style={{ color: 'var(--t3)', fontSize: 11 }}>{i + 1}</td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: colorFor(e.id), color: '#fff', display: 'flex', alignItems: 'center', justify-content: 'center', fontSize: 9, fontWeight: 700, flexShrink: 0 }}>{e.avatar}</div>
+                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: colorFor(e.id), color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, flexShrink: 0 }}>{e.avatar}</div>
                         <div>
                           <div style={{ fontWeight: 600, fontSize: 12.5 }}>{e.name}</div>
                           <div className="mono" style={{ fontSize: 10, color: 'var(--t3)' }}>{e.id}</div>
