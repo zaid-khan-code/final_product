@@ -7,7 +7,7 @@ import { Eye, EyeOff, Zap } from 'lucide-react';
 export default function LoginPage() {
   const { user, login } = useAuth();
   const router = useRouter();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
@@ -19,19 +19,16 @@ export default function LoginPage() {
     }
   }, [user, router]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    setTimeout(() => {
-      const success = login(username, password);
-      if (success) {
-        // Redirection will be handled by useEffect
-      } else {
-        setError('Invalid username or password');
-      }
-      setLoading(false);
-    }, 500);
+    
+    const success = await login(email, password);
+    if (!success) {
+      setError('Invalid email or password');
+    }
+    setLoading(false);
   };
 
   if (user) return null;
@@ -46,8 +43,8 @@ export default function LoginPage() {
         <div className="login-sub">Sign in to your account</div>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">Username</label>
-            <input className="input" value={username} onChange={e => setUsername(e.target.value)} placeholder="Enter username" />
+            <label className="form-label">Email Address</label>
+            <input className="input" value={email} onChange={e => setEmail(e.target.value)} placeholder="Enter email" />
           </div>
           <div className="form-group">
             <label className="form-label">Password</label>
@@ -63,12 +60,6 @@ export default function LoginPage() {
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
-        <div style={{ marginTop: 20, padding: 12, background: 'var(--inp)', borderRadius: 'var(--rsm)', fontSize: 11, color: 'var(--t3)' }}>
-          <div style={{ fontWeight: 600, marginBottom: 6, color: 'var(--t2)' }}>Demo Accounts:</div>
-          <div className="mono" style={{ fontSize: 10.5 }}>superadmin / admin123 → Super Admin</div>
-          <div className="mono" style={{ fontSize: 10.5 }}>hr1 / hr123 → HR</div>
-          <div className="mono" style={{ fontSize: 10.5 }}>emp001 / emp123 → Employee</div>
-        </div>
       </div>
     </div>
   );

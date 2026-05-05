@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useMemo } from 'react';
 import { useData } from '@/contexts/DataContext';
-import { getStatusColor } from '@/data/dummyData';
+import { getStatusColor } from '@/lib/utils';
 import { Plus, Check, X, Pencil, RotateCcw, CalendarDays, Users } from 'lucide-react';
 import Modal from '@/components/Modal';
 import DecisionBanner from '@/components/DecisionBanner';
@@ -15,7 +15,7 @@ function calcDays(from: string, to: string): number {
 }
 
 export default function LeavePage() {
-  const { leaveRequests: data, setLeaveRequests: setData, employees, leaveTypes } = useData();
+  const { leaveRequests: data, employees, leaveTypes, approveLeaveRequest, rejectLeaveRequest, submitLeaveRequest } = useData();
   const [tab, setTab] = useState('all');
   const { showToast } = useToastContext();
   const [newModal, setNewModal] = useState(false);
@@ -60,17 +60,25 @@ export default function LeavePage() {
     }
   }
 
-  function executeApprove(id: string) {
-    setData(prev => prev.map((l: any) => l.id === id ? { ...l, status: 'Approved' } : l));
-    setApproveModal(null);
-    showToast('Leave approved');
+  async function executeApprove(id: string) {
+    try {
+      await approveLeaveRequest(id);
+      setApproveModal(null);
+      showToast('Leave approved');
+    } catch (err) {
+      showToast('Failed to approve leave', 'error');
+    }
   }
 
-  function handleReject(id: string) {
+  async function handleReject(id: string) {
     if (!rejectComment.trim()) { showToast('Please provide a reason for rejection', 'error'); return; }
-    setData(prev => prev.map((l: any) => l.id === id ? { ...l, status: 'Rejected' } : l));
-    showToast('Leave rejected', 'error');
-    setRejectModal(null); setRejectComment('');
+    try {
+      await rejectLeaveRequest(id, rejectComment);
+      showToast('Leave rejected', 'error');
+      setRejectModal(null); setRejectComment('');
+    } catch (err) {
+      showToast('Failed to reject leave', 'error');
+    }
   }
 
   function openEdit(row: any) { setEditType(row.leaveType); setEditFrom(row.from); setEditTo(row.to); setEditReason(row.reason); setEditModal(row); }
@@ -83,18 +91,36 @@ export default function LeavePage() {
 
   function openEarly(row: any) { setEarlyDate(''); setEarlyModal(row); }
 
-  function confirmEarly() {
+  async function confirmEarly() {
     if (!earlyModal || !earlyDate) return;
     setSaving(true);
-    setTimeout(() => { const actualDays = calcDays(earlyModal.from, earlyDate); setData(prev => prev.map((l: any) => l.id === earlyModal.id ? { ...l, to: earlyDate, days: actualDays } : l)); setSaving(false); setEarlyModal(null); showToast('Early return recorded'); }, 600);
+    try {
+      await earlyReturnLeave(earlyModal.id, earlyDate);
+      setSaving(false); setEarlyModal(null); showToast('Early return recorded');
+    } catch (err) {
+      setSaving(false);
+      showToast('Failed to record early return', 'error');
+    }
   }
 
   const newDays = calcDays(newFrom, newTo);
 
-  function submitNew() {
+  async function submitNew() {
     if (!newEmp || !newFrom || !newTo || !newReason) { showToast('Please fill all required fields', 'error'); return; }
     setSaving(true);
-    setTimeout(() => { const emp = employees.find((e: any) => e.id === newEmp); setData(prev => [{ id: 'LR' + String(prev.length + 1).padStart(3, '0'), empId: newEmp, empName: emp?.name || '', leaveType: newType, from: newFrom, to: newTo, days: newDays, reason: newReason, appliedOn: new Date().toISOString().split('T')[0], status: 'Pending' }, ...prev]); setSaving(false); setNewModal(false); setNewEmp(''); setNewType('Annual'); setNewFrom(''); setNewTo(''); setNewReason(''); showToast('Leave request submitted'); }, 600);
+    try {
+      await submitLeaveRequest({
+        employeeId: newEmp,
+        leaveType: newType,
+        from: newFrom,
+        to: newTo,
+        reason: newReason
+      });
+      setSaving(false); setNewModal(false); setNewEmp(''); setNewType('Annual'); setNewFrom(''); setNewTo(''); setNewReason(''); showToast('Leave request submitted');
+    } catch (err) {
+      setSaving(false);
+      showToast('Failed to submit leave', 'error');
+    }
   }
 
   const earlyOrigDays = earlyModal ? calcDays(earlyModal.from, earlyModal.to) : 0;

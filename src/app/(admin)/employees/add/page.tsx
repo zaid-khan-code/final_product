@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useData } from '@/contexts/DataContext';
 import { useRouter } from 'next/navigation';
-import { formatPKR } from '@/data/dummyData';
+import { formatPKR } from '@/lib/utils';
 import { Check, Lock, Upload, FileText, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import DecisionBanner from '@/components/DecisionBanner';
 import { useToastContext } from '@/contexts/ToastContext';
@@ -87,10 +87,10 @@ export default function AddEmployeePage() {
   const goNext = () => { if (!validate()) return; if (step < STEPS.length - 1) { setDirection('right'); setAnimating(true); setTimeout(() => { setStep(step + 1); setAnimating(false); }, 300); } };
   const goBack = () => { if (step > 0) { setDirection('left'); setAnimating(true); setTimeout(() => { setStep(step - 1); setAnimating(false); }, 300); } };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setSaving(true);
-    setTimeout(() => {
-      addEmployee({
+    try {
+      await addEmployee({
         id: 'EMP' + String(Date.now()).slice(-3),
         name: fullName, fatherName, dob, cnic, gender, department: dept, designation: desig,
         employmentType: empType, jobStatus: jobStat, workMode: wMode, workLocation: wLoc,
@@ -101,9 +101,13 @@ export default function AddEmployeePage() {
         medications, avatar: fullName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2),
         commissionEligible,
         salary: { basic: salBasic, houseRent: salHouse, medical: salMedical, conveyance: salConveyance, commission: commissionEligible ? salCommission : 0 },
+        email: accountMethod === 'A' ? username : empEmail,
       });
       setSaving(false); showToast('Employee saved successfully'); router.push('/employees');
-    }, 800);
+    } catch (err) {
+      setSaving(false);
+      showToast('Failed to save employee', 'error');
+    }
   };
 
   // Render step content (same as before but using data from context)

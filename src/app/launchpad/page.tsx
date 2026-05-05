@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Users, Settings, User } from 'lucide-react';
 
 export default function LaunchpadPage() {
-  const { activeRole, user, logout } = useAuth();
+  const { user, logout } = useAuth();
   const router = useRouter();
 
   const handleLaunch = (path: string) => {
@@ -18,7 +18,7 @@ export default function LaunchpadPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
           <div>
             <div className="mono" style={{ fontSize: 13, color: 'var(--t3)', letterSpacing: 1 }}>ESSPL ECOSYSTEM</div>
-            <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--p)' }}>Welcome back, {user?.username}</h1>
+            <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--p)' }}>Welcome back, {user?.name}</h1>
           </div>
           <button className="btn btn-secondary" onClick={logout}>Sign Out</button>
         </div>
@@ -26,7 +26,7 @@ export default function LaunchpadPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 20 }}>
           
           {/* Core HCM (HR & Admin only) */}
-          {(activeRole === 'super_admin' || activeRole === 'hr') && (
+          {(user?.role === 'super_admin' || user?.role === 'hr_manager' || user?.role === 'hr_executive') && (
             <div 
               className="card" 
               style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', textAlign: 'center', transition: 'all 0.2sease' }}
@@ -54,7 +54,7 @@ export default function LaunchpadPage() {
           </div>
 
           {/* Settings (Super Admin only) */}
-          {activeRole === 'super_admin' && (
+          {user?.role === 'super_admin' && (
             <div 
               className="card" 
               style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', textAlign: 'center', transition: 'all 0.2s ease' }}

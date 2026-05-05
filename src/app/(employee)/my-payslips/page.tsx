@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from 'react';
-import { formatPKR, numberToWords } from '@/data/dummyData';
+import { formatPKR, numberToWords } from '@/lib/utils';
 import Modal from '@/components/Modal';
 import { Printer, Download, Mail } from 'lucide-react';
 

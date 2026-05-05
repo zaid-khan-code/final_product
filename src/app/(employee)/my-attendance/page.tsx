@@ -2,13 +2,15 @@
 import React, { useState } from 'react';
 import { useData } from '@/contexts/DataContext';
 import { Calendar, TrendingUp, TrendingDown } from 'lucide-react';
-import { getStatusColor } from '@/data/dummyData';
+import { getStatusColor } from '@/lib/utils';
 import Modal from '@/components/Modal';
 import { useToastContext } from '@/contexts/ToastContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function MyAttendancePage() {
+  const { user } = useAuth();
   const { attendanceData } = useData();
-  const empAtt = attendanceData.filter((a: any) => a.empId === 'EMP001');
+  const empAtt = attendanceData.filter((a: any) => a.empId === user?.employeeId);
   const [monthFilter, setMonthFilter] = useState('March');
   const [regModal, setRegModal] = useState(false);
   const [regDate, setRegDate] = useState('');

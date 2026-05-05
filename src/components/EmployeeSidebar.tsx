@@ -23,7 +23,7 @@ export default function EmployeeSidebar() {
 
   // Find today's attendance for the logged-in user (demo default: EMP001)
   const todayDate = "2026-03-19"; // Unified prototype date
-  const myAttendanceToday = attendanceData.find(a => a.empId === 'EMP001' && a.date === todayDate);
+  const myAttendanceToday = attendanceData.find(a => a.empId === user?.employeeId && a.date === todayDate);
 
   const isPresent = myAttendanceToday?.status === 'Present';
   const isLate = myAttendanceToday?.status === 'Late';
@@ -71,9 +71,9 @@ export default function EmployeeSidebar() {
       <div className="sb-bottom">
         <div className="sb-user">
           <div className="sb-chip" onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 8, cursor: 'pointer' }}>
-            <div className="sb-av">{user?.username?.substring(0,2).toUpperCase()}</div>
+            <div className="sb-av">{user?.name?.substring(0,2).toUpperCase() || 'E'}</div>
             <div>
-              <div className="sb-un">{user?.username || 'Employee'}</div>
+              <div className="sb-un">{user?.name || 'Employee'}</div>
               {isPresent || isLate ? (
                 <div style={{ fontSize: 9, color: isLate ? 'var(--amber)' : 'var(--green)', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 700 }}>
                   <div style={{ width: 6, height: 6, borderRadius: '50%', background: isLate ? 'var(--amber)' : 'var(--green)' }} /> 

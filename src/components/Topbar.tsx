@@ -23,7 +23,7 @@ const routeNames: Record<string, string> = {
 };
 
 export default function Topbar() {
-  const { user, activeRole, switchRole } = useAuth();
+  const { user } = useAuth();
   const pathname = usePathname();
   const [time, setTime] = useState(new Date());
 
@@ -68,24 +68,9 @@ export default function Topbar() {
       </div>
 
       <div className="topbar-right">
-        <div className="role-switcher">
-          {(["hr", "super_admin", "employee"] as const).map((role) => (
-            <button
-              key={role}
-              className={activeRole === role ? "active" : ""}
-              onClick={() => switchRole(role)}
-            >
-              {role === "hr"
-                ? "HR"
-                : role === "super_admin"
-                  ? "Super Admin"
-                  : "Employee"}
-            </button>
-          ))}
-        </div>
         <span className="tdate">{dateStr}</span>
         <div className="t-av">
-          {user?.username?.substring(0, 2).toUpperCase() || "SA"}
+          {user?.name?.substring(0, 2).toUpperCase() || "SA"}
         </div>
       </div>
     </div>

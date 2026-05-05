@@ -8,7 +8,7 @@ import Topbar from '@/components/Topbar';
 import { AlertTriangle, X } from 'lucide-react';
 
 export default function AdminLayoutWrapper({ children }: { children: React.ReactNode }) {
-  const { user, activeRole } = useAuth();
+  const { user } = useAuth();
   const { globalDays } = useData();
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const router = useRouter();
@@ -20,12 +20,12 @@ export default function AdminLayoutWrapper({ children }: { children: React.React
   useEffect(() => {
     if (!user) {
       router.push('/login');
-    } else if (activeRole === 'employee') {
+    } else if (user.role === 'employee') {
       router.push('/my-dashboard');
     }
-  }, [user, activeRole, router]);
+  }, [user, router]);
 
-  if (!user || activeRole === 'employee') return null;
+  if (!user || user.role === 'employee') return null;
 
   const today = new Date().toISOString().split('T')[0];
   const activeBanner = !bannerDismissed ? globalDays.find(g => g.date === today && g.show_banner && g.is_active) : null;

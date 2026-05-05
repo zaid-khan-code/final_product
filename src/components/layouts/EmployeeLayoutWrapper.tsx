@@ -6,18 +6,16 @@ import EmployeeSidebar from '@/components/EmployeeSidebar';
 import Topbar from '@/components/Topbar';
 
 export default function EmployeeLayoutWrapper({ children }: { children: React.ReactNode }) {
-  const { user, activeRole } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!user) {
       router.push('/login');
-    } else if (activeRole !== 'employee') {
-      router.push('/dashboard');
     }
-  }, [user, activeRole, router]);
+  }, [user, router]);
 
-  if (!user || activeRole !== 'employee') return null;
+  if (!user) return null;
 
   return (
     <div className="app-layout">

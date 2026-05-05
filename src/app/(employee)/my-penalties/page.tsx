@@ -9,7 +9,7 @@ import {
   ChevronDown,
   CheckCircle,
 } from "lucide-react";
-import { formatPKR } from "@/data/dummyData";
+import { formatPKR } from "@/lib/utils";
 import { useToastContext } from "@/contexts/ToastContext";
 
 const penaltiesData = [
@@ -85,29 +85,27 @@ const penaltyRules = [
   { type: "Absent", rule: "Unmarked absence", amount: 2500 },
 ];
 
+import { useData } from "@/contexts/DataContext";
+import { useAuth } from "@/contexts/AuthContext";
+
 export default function MyPenaltiesPage() {
+  const { user } = useAuth();
+  const { penalties: allPenalties, penaltiesConfig: rules, ackPenalty: apiAckPenalty } = useData();
+  const penaltiesData = allPenalties.filter((p: any) => p.empId === user?.employeeId);
+  const penaltyRules = rules;
+  
   const [filter, setFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [search, setSearch] = useState("");
   const { showToast } = useToastContext();
-  const [mounted, setMounted] = useState(false);
 
-  // Acknowledgment tracking
-  const [acknowledged, setAcknowledged] = useState<string[]>([]);
-
-  useEffect(() => {
+  async function handleAck(id: string) {
     try {
-      const stored = JSON.parse(localStorage.getItem('ems_penalty_ack') || '[]');
-      setAcknowledged(stored);
-    } catch { }
-    setMounted(true);
-  }, []);
-
-  function ackPenalty(id: string) {
-    const updated = [...acknowledged, id];
-    setAcknowledged(updated);
-    localStorage.setItem('ems_penalty_ack', JSON.stringify(updated));
-    showToast('Penalty acknowledged');
+      await apiAckPenalty(id);
+      showToast('Penalty acknowledged');
+    } catch (err) {
+      showToast('Failed to acknowledge penalty', 'error');
+    }
   }
 
   const filtered = penaltiesData.filter((p) => {

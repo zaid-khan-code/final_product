@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useData } from "@/contexts/DataContext";
-import { formatPKR } from "@/data/dummyData";
+import { formatPKR } from "@/lib/utils";
 import {
   Calendar,
   CalendarDays,
@@ -29,10 +29,26 @@ import {
 import Modal from "@/components/Modal";
 import { useToastContext } from "@/contexts/ToastContext";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function MyDashboardPage() {
+  const { user } = useAuth();
   const [time, setTime] = useState(new Date());
-  const { attendanceData, leaveRequests, setLeaveRequests, employees, globalDays, announcements } = useData();
+  const { attendanceData, leaveRequests, submitLeaveRequest, employees, globalDays, announcements, fetchMySummary } = useData();
+  const [summary, setSummary] = useState<any>(null);
+
+  useEffect(() => {
+    async function loadSummary() {
+      try {
+        const data = await fetchMySummary();
+        if (data) setSummary(data);
+      } catch (err) {
+        console.error('Failed to load personal summary:', err);
+      }
+    }
+    loadSummary();
+  }, [fetchMySummary]);
+
   const [leaveModal, setLeaveModal] = useState(false);
   const [leaveType, setLeaveType] = useState("Annual Leave");
   const [fromDate, setFromDate] = useState("");
@@ -50,7 +66,7 @@ export default function MyDashboardPage() {
 
   // Pending attendance verifications (unacknowledged by employee)
   const pendingVerifications = attendanceData
-    .filter((a: any) => a.empId === 'EMP001' && !a.acknowledged)
+    .filter((a: any) => a.empId === user?.employeeId && !a.acknowledged)
     .slice(0, 3);
   const [ackedDates, setAckedDates] = useState<string[]>([]);
 
@@ -95,7 +111,7 @@ export default function MyDashboardPage() {
       hour12: false,
     }) + " PKT";
 
-  const balances = [
+  const balances = summary?.leave_balances || [
     { type: "Annual", remaining: 7, total: 12, color: "var(--p)" },
     { type: "Casual", remaining: 10, total: 12, color: "var(--green)" },
     { type: "Medical", remaining: 8, total: 8, color: "var(--teal)" },
@@ -109,7 +125,7 @@ export default function MyDashboardPage() {
     return Math.max(0, diff + 1);
   };
 
-  const selectedBalance = balances.find((b) =>
+  const selectedBalance = balances.find((b: any) =>
     leaveType.toLowerCase().includes(b.type.toLowerCase()),
   );
   const daysRequested = calcDays();
@@ -140,33 +156,23 @@ export default function MyDashboardPage() {
     showToast(`Checked out at ${now}`);
   };
 
-  const handleLeaveSubmit = () => {
+  const handleLeaveSubmit = async () => {
     if (!fromDate || !toDate || !reason) {
       showToast("Please fill all fields", "error");
       return;
     }
-    setLeaveRequests((prev) => [
-      {
-        id: "LR" + String(prev.length + 1).padStart(3, "0"),
-        empId: "EMP001",
-        empName: "Ahmed Ali",
-        leaveType: leaveType
-          .replace(" Leave", "")
-          .split(' (')[0],
+    try {
+      await submitLeaveRequest({
+        leaveType: leaveType.replace(" Leave", "").split(' (')[0],
         from: fromDate,
         to: toDate,
-        days: daysRequested,
         reason,
-        appliedOn: new Date().toISOString().split('T')[0],
-        status: "Pending",
-      },
-      ...prev,
-    ]);
-    showToast("Leave request submitted");
-    setLeaveModal(false);
-    setFromDate("");
-    setToDate("");
-    setReason("");
+      });
+      showToast("Leave request submitted");
+      setLeaveModal(false); setFromDate(""); setToDate(""); setReason("");
+    } catch (err) {
+      showToast("Failed to submit leave", "error");
+    }
   };
 
   // Team members
@@ -239,13 +245,13 @@ export default function MyDashboardPage() {
         >
           <div>
             <div style={{ fontSize: 18, fontWeight: 800, color: "var(--t1)" }}>
-              Welcome back, Ahmed Ali 👋
+              Welcome back, {user?.name || user?.username || 'Employee'} 👋
             </div>
             <div style={{ display: "flex", gap: 16, marginTop: 6 }}>
               {[
-                { label: "Employee ID", value: "EMP001" },
-                { label: "Department", value: "Engineering" },
-                { label: "Shift", value: "Morning Shift (09:00-18:00)" },
+                { label: "Employee ID", value: user?.employeeId || '...' },
+                { label: "Department", value: user?.department || '...' },
+                { label: "Shift", value: user?.shift || 'Morning Shift (09:00-18:00)' },
               ].map((item, i) => (
                 <span
                   key={i}
@@ -384,13 +390,13 @@ export default function MyDashboardPage() {
           </div>
           <div>
             <div className="kpi-val">
-              18<span style={{ fontSize: 13, color: "var(--t3)" }}> / 22</span>
+              {summary?.attendance_count || 18}<span style={{ fontSize: 13, color: "var(--t3)" }}> / {summary?.working_days || 22}</span>
             </div>
             <div className="kpi-lbl">Attendance This Month</div>
             <div className="progress-bar" style={{ width: 80, marginTop: 4 }}>
               <div
                 className="progress-fill"
-                style={{ width: "82%", background: "var(--p)" }}
+                style={{ width: `${((summary?.attendance_count || 18) / (summary?.working_days || 22)) * 100}%`, background: "var(--p)" }}
               />
             </div>
           </div>
@@ -409,7 +415,7 @@ export default function MyDashboardPage() {
           >
             Leave Balance
           </div>
-          {balances.map((b, i) => (
+          {balances.map((b: any, i: number) => (
             <div
               key={i}
               style={{
@@ -445,7 +451,7 @@ export default function MyDashboardPage() {
             <Clock size={17} />
           </div>
           <div>
-            <div className="kpi-val">1</div>
+            <div className="kpi-val">{summary?.pending_requests || 0}</div>
             <div className="kpi-lbl">Pending Requests</div>
           </div>
         </div>
@@ -455,9 +461,9 @@ export default function MyDashboardPage() {
           </div>
           <div>
             <div className="kpi-val" style={{ fontSize: 16 }}>
-              {formatPKR(178000)}
+              {formatPKR(summary?.last_payslip_amount || 0)}
             </div>
-            <div className="kpi-lbl">Last Payslip · Mar 2026</div>
+            <div className="kpi-lbl">Last Payslip · {summary?.last_payslip_month || 'N/A'}</div>
           </div>
         </div>
       </div>
@@ -486,7 +492,7 @@ export default function MyDashboardPage() {
               </thead>
               <tbody>
                 {attendanceData
-                  .filter((a: any) => a.empId === "EMP001")
+                  .filter((a: any) => a.empId === user?.employeeId)
                   .slice(0, 7)
                   .map((a: any, i: number) => (
                     <tr
@@ -538,7 +544,7 @@ export default function MyDashboardPage() {
               </thead>
               <tbody>
                 {leaveRequests
-                  .filter((l: any) => l.empId === "EMP001")
+                  .filter((l: any) => l.empId === user?.employeeId)
                   .slice(0, 5)
                   .map((l: any, i: number) => (
                     <tr key={i}>

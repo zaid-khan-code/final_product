@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import { useData } from '@/contexts/DataContext';
-import { getStatusColor } from '@/data/dummyData';
+import { getStatusColor } from '@/lib/utils';
 import { Download } from 'lucide-react';
 
 const actionColors: Record<string, string> = { CREATE: 'pill-green', UPDATE: 'pill-blue', DELETE: 'pill-red', LOGIN: 'pill-steel', LOGOUT: 'pill-steel' };

@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import { useData } from '@/contexts/DataContext';
-import { formatPKR } from '@/data/dummyData';
+import { formatPKR } from '@/lib/utils';
 import { AlertTriangle, Plus, Check, X, Search, Shield } from 'lucide-react';
 import Modal from '@/components/Modal';
 import { useToastContext } from '@/contexts/ToastContext';
@@ -36,9 +36,8 @@ const statusColor: Record<string, string> = {
 };
 
 export default function PenaltiesAdminPage() {
-  const { employees, departments } = useData();
+  const { employees, departments, penalties: penaltiesData, proposePenalty, approvePenalty, rejectPenalty } = useData();
   const { showToast } = useToastContext();
-  const [penalties, setPenalties] = useState<Penalty[]>(INIT_PENALTIES);
   const [tab, setTab] = useState<'all' | 'proposed' | 'applied' | 'waived'>('all');
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState('');
@@ -50,66 +49,68 @@ export default function PenaltiesAdminPage() {
   const [newAmount, setNewAmount] = useState(PENALTY_TYPES[0].amount);
   const [newReason, setNewReason] = useState('');
   const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
+  const [saving, setSaving] = useState(false);
+
+  // Review modal (Approve/Reject)
+  const [reviewModal, setReviewModal] = useState<any | null>(null);
+  const [reviewNote, setReviewNote] = useState('');
 
   // Waive modal
-  const [waiveModal, setWaiveModal] = useState<Penalty | null>(null);
+  const [waiveModal, setWaiveModal] = useState<any | null>(null);
   const [waiveReason, setWaiveReason] = useState('');
 
-  const filtered = penalties.filter(p => {
-    if (tab !== 'all' && p.status.toLowerCase() !== tab) return false;
+  const filtered = penaltiesData.filter((p: any) => {
+    if (tab !== 'all' && p.status?.toLowerCase() !== tab) return false;
     if (deptFilter && p.dept !== deptFilter) return false;
-    if (search && !p.empName.toLowerCase().includes(search.toLowerCase()) && !p.type.toLowerCase().includes(search.toLowerCase())) return false;
+    const empName = p.empName || employees.find((e: any) => e.id === p.empId)?.name || '';
+    if (search && !empName.toLowerCase().includes(search.toLowerCase()) && !p.type?.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
 
   const totals = {
-    proposed: penalties.filter(p => p.status === 'Proposed').length,
-    hoApproved: penalties.filter(p => p.status === 'HO Approved').length,
-    applied: penalties.reduce((s, p) => p.status === 'Applied' ? s + p.amount : s, 0),
-    waived: penalties.reduce((s, p) => p.status === 'Waived' ? s + p.amount : s, 0),
+    proposed: penaltiesData.filter((p: any) => p.status === 'Proposed').length,
+    hoApproved: penaltiesData.filter((p: any) => p.status === 'HO Approved').length,
+    applied: penaltiesData.reduce((s: number, p: any) => p.status === 'Applied' ? s + p.amount : s, 0),
+    waived: penaltiesData.reduce((s: number, p: any) => p.status === 'Waived' ? s + p.amount : s, 0),
   };
 
-  function handleTypeChange(label: string) {
-    setNewType(label);
-    const pt = PENALTY_TYPES.find(t => t.label === label);
-    if (pt && pt.amount > 0) setNewAmount(pt.amount);
-    else setNewAmount(0);
-  }
-
-  function submitPenalty() {
+  async function submitPenalty() {
     if (!newEmp || !newReason) { showToast('Fill all required fields', 'error'); return; }
-    const emp = employees.find((e: any) => e.id === newEmp);
-    const newP: Penalty = {
-      id: 'PA' + String(penalties.length + 1).padStart(3, '0'),
-      empId: newEmp, empName: emp?.name || '', dept: emp?.department || '',
-      date: newDate, type: newType, reason: newReason, amount: newAmount,
-      status: 'Proposed', appliedBy: 'HR Admin',
-    };
-    setPenalties(prev => [newP, ...prev]);
-    setNewModal(false); setNewEmp(''); setNewReason(''); setNewType(PENALTY_TYPES[0].label); setNewAmount(PENALTY_TYPES[0].amount);
-    showToast('Penalty proposed — pending HO approval');
+    setSaving(true);
+    try {
+      await proposePenalty({
+        employeeId: newEmp,
+        type: newType,
+        date: newDate,
+        reason: newReason,
+        amount: newAmount
+      });
+      setSaving(false); setNewModal(false); setNewEmp(''); setNewReason(''); showToast('Penalty proposed — pending HO approval');
+    } catch (err) {
+      setSaving(false);
+      showToast('Failed to propose penalty', 'error');
+    }
   }
 
-  function hoApprove(id: string) {
-    setPenalties(prev => prev.map(p => p.id === id ? { ...p, status: 'HO Approved' } : p));
-    showToast('Forwarded for HO approval');
+  async function executeApprove(id: string) {
+    try {
+      await approvePenalty(id, reviewNote);
+      setReviewModal(null); setReviewNote('');
+      showToast('Forwarded for HO approval');
+    } catch (err) {
+      showToast('Failed to approve penalty', 'error');
+    }
   }
 
-  function applyPenalty(id: string) {
-    setPenalties(prev => prev.map(p => p.id === id ? { ...p, status: 'Applied' } : p));
-    showToast('Penalty applied to payroll');
-  }
-
-  function confirmWaive() {
-    if (!waiveModal || !waiveReason.trim()) { showToast('Waive reason required', 'error'); return; }
-    setPenalties(prev => prev.map(p => p.id === waiveModal.id ? { ...p, status: 'Waived', waivedReason: waiveReason } : p));
-    setWaiveModal(null); setWaiveReason('');
-    showToast('Penalty waived');
-  }
-
-  function rejectPenalty(id: string) {
-    setPenalties(prev => prev.map(p => p.id === id ? { ...p, status: 'Rejected' } : p));
-    showToast('Penalty rejected');
+  async function executeReject(id: string) {
+    if (!reviewNote.trim()) { showToast('Reason required', 'error'); return; }
+    try {
+      await rejectPenalty(id, reviewNote);
+      setReviewModal(null); setReviewNote('');
+      showToast('Penalty rejected');
+    } catch (err) {
+      showToast('Failed to reject penalty', 'error');
+    }
   }
 
   return (

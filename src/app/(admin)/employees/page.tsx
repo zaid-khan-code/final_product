@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useData } from '@/contexts/DataContext';
-import { getStatusColor } from '@/data/dummyData';
+import { getStatusColor } from '@/lib/utils';
 import { Plus, Search, Eye, Pencil, ChevronUp, ChevronDown, ArrowUpDown, UserX } from 'lucide-react';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useToastContext } from '@/contexts/ToastContext';
@@ -60,11 +60,16 @@ export default function EmployeesPage() {
     else setSelected(new Set(paged.map(e => e.id)));
   };
 
-  const terminateSelected = () => {
-    setEmployees(prev => prev.map(e => selected.has(e.id) ? { ...e, jobStatus: 'Terminated' } : e));
-    showToast(`${selected.size} employee(s) terminated successfully`);
-    setSelected(new Set());
-    setTerminateConfirm(false);
+  const terminateSelected = async () => {
+    try {
+      const promises = Array.from(selected).map(id => deactivateEmployee(id));
+      await Promise.all(promises);
+      showToast(`${selected.size} employee(s) terminated successfully`);
+      setSelected(new Set());
+      setTerminateConfirm(false);
+    } catch (err) {
+      showToast('Failed to terminate some employees', 'error');
+    }
   };
 
   const clearFilters = () => { setSearch(''); setDeptFilter(''); setStatusFilter(''); setModeFilter(''); };

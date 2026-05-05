@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import { useData } from '@/contexts/DataContext';
-import { getStatusColor } from '@/data/dummyData';
+import { getStatusColor } from '@/lib/utils';
 import { Plus } from 'lucide-react';
 import Modal from '@/components/Modal';
 import { useToastContext } from '@/contexts/ToastContext';

@@ -1,7 +1,7 @@
 "use client";
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useData } from '@/contexts/DataContext';
-import { getStatusColor } from '@/data/dummyData';
+import { getStatusColor } from '@/lib/utils';
 import { Download, Save, Copy, Undo2, Upload, Calendar as CalendarIcon, Lock } from 'lucide-react';
 import DecisionBanner from '@/components/DecisionBanner';
 import { useToastContext } from '@/contexts/ToastContext';
@@ -30,7 +30,7 @@ function autoStatus(expectedIn: string, checkIn: string, lateAfter: number, curr
 }
 
 export default function AttendancePage() {
-  const { employees, departments, workLocations, shifts } = useData();
+  const { employees, departments, workLocations, shifts, fetchAttendance, saveAttendance, getConfigId } = useData();
   const [tab, setTab] = useState('daily');
   const [viewMode, setViewMode] = useState<'table' | 'calendar'>('table');
   const [selectedDate, setSelectedDate] = useState('2026-03-19');
@@ -40,23 +40,45 @@ export default function AttendancePage() {
   const { showToast } = useToastContext();
   const [undoStack, setUndoStack] = useState<AttRow[][]>([]);
   const [isLocked, setIsLocked] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const initRows = (): AttRow[] => employees.map((e: any) => {
-    const s = shifts.find((sh: any) => sh.name === e.shift);
-    const existing = e.id === 'EMP001' ? { checkIn: '09:02', checkOut: '18:05', status: 'Present' } :
-      e.id === 'EMP002' ? { checkIn: '08:55', checkOut: '18:00', status: 'Present' } :
-      e.id === 'EMP003' ? { checkIn: '09:22', checkOut: '18:10', status: 'Late' } :
-      e.id === 'EMP004' ? { checkIn: '-', checkOut: '-', status: 'On Leave' } :
-      { checkIn: '-', checkOut: '-', status: 'Absent' };
-    return {
-      empId: e.id, name: e.name, dept: e.department, shift: e.shift,
-      expectedIn: s?.start || '09:00', checkIn: existing.checkIn, checkOut: existing.checkOut,
-      status: existing.status, lateBy: calcLateBy(s?.start || '09:00', existing.checkIn, s?.lateAfter || 15),
-      notes: e.id === 'EMP004' ? 'Annual Leave' : '', acknowledged: e.id !== 'EMP005',
-    };
-  });
+  const [rows, setRows] = useState<AttRow[]>([]);
 
-  const [rows, setRows] = useState<AttRow[]>(initRows);
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      const locId = locFilter ? getConfigId('workLocations', locFilter) : undefined;
+      const data = await fetchAttendance(selectedDate, locId);
+      
+      if (data && data.length > 0) {
+        setRows(data.map((r: any) => ({
+          empId: r.employee_id,
+          name: r.employee_name || employees.find(e => e.id === r.employee_id)?.name || 'Unknown',
+          dept: r.department_name || employees.find(e => e.id === r.employee_id)?.department || 'Unknown',
+          shift: r.shift_name || employees.find(e => e.id === r.employee_id)?.shift || 'Unknown',
+          expectedIn: r.expected_in || '09:00',
+          checkIn: r.check_in || '-',
+          checkOut: r.check_out || '-',
+          status: r.status ? r.status.charAt(0).toUpperCase() + r.status.slice(1) : '',
+          lateBy: r.late_by || '',
+          notes: r.notes || '',
+          acknowledged: r.acknowledged || false,
+        })));
+      } else {
+        const initial = employees.map((e: any) => {
+          const s = shifts.find((sh: any) => sh.name === e.shift);
+          return {
+            empId: e.id, name: e.name, dept: e.department, shift: e.shift,
+            expectedIn: s?.start || '09:00', checkIn: '-', checkOut: '-',
+            status: '', lateBy: '', notes: '', acknowledged: false,
+          };
+        });
+        setRows(initial);
+      }
+      setLoading(false);
+    }
+    loadData();
+  }, [selectedDate, locFilter, fetchAttendance, getConfigId, employees, shifts]);
 
   const filteredRows = rows.filter(r => {
     if (deptFilter && r.dept !== deptFilter) return false;
@@ -89,9 +111,18 @@ export default function AttendancePage() {
     });
   };
 
-  const saveAll = () => {
-    localStorage.setItem('ems_attendanceSheet_' + selectedDate, JSON.stringify(rows));
-    showToast('Draft changes saved');
+  const saveAll = async () => {
+    const locId = locFilter ? getConfigId('workLocations', locFilter) : getConfigId('workLocations', workLocations[0]);
+    if (!locId) {
+      showToast('Please select a location');
+      return;
+    }
+    try {
+      await saveAttendance(selectedDate, locId, rows);
+      showToast('Attendance saved successfully');
+    } catch (err) {
+      showToast('Failed to save attendance');
+    }
   };
 
   const lockSheet = () => {

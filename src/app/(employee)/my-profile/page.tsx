@@ -34,33 +34,49 @@ export default function MyProfilePage() {
     if (/[^a-zA-Z0-9]/.test(pwd)) score++;
     const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
     const colors = ['', 'var(--red)', 'var(--amber)', 'var(--green)', 'var(--green)'];
-    return { score, label: labels[score], color: colors[score] };
-  };
+    import { useAuth } from '@/contexts/AuthContext';
+    ...
+    export default function MyProfilePage() {
+      const { user, changePassword } = useAuth();
+      const { employees } = useData();
+      const emp = employees.find(e => e.id === user?.employeeId) || employees[0];
+      const { showToast } = useToastContext();
+      ...
+      const handleSave = async () => {
+        try {
+          await apiFetch(`/employees/${emp.id}/extra`, {
+            method: 'PATCH',
+            body: JSON.stringify({
+              phone: contact,
+              emergency_contact_1: ice1,
+              emergency_contact_2: ice2,
+              bank_name: bankName,
+              bank_acc_num: bankAcc,
+            })
+          });
+          showToast('Profile updated');
+          setEditing(false);
+        } catch (err) {
+          showToast('Failed to update profile', 'error');
+        }
+      };
 
-  const strength = pwdStrength(newPwd);
-
-  const handleSave = () => {
-    localStorage.setItem('ems_profile_contact', contact);
-    localStorage.setItem('ems_profile_ice1', ice1);
-    localStorage.setItem('ems_profile_ice2', ice2);
-    localStorage.setItem('ems_profile_bank', bankName);
-    localStorage.setItem('ems_profile_bankAcc', bankAcc);
-    showToast('Profile updated');
-    setEditing(false);
-  };
-
-  const handlePasswordChange = () => {
-    if (!currentPwd) { showToast('Enter your current password', 'error'); return; }
-    if (currentPwd !== 'Welcome@123') { showToast('Current password is incorrect', 'error'); return; }
-    if (newPwd.length < 8) { showToast('New password must be at least 8 characters', 'error'); return; }
-    if (newPwd !== confirmPwd) { showToast('Passwords do not match', 'error'); return; }
-    setPwdSaving(true);
-    setTimeout(() => {
-      setPwdSaving(false);
-      setCurrentPwd(''); setNewPwd(''); setConfirmPwd('');
-      showToast('Password changed successfully');
-    }, 800);
-  };
+      const handlePasswordChange = async () => {
+        if (!currentPwd) { showToast('Enter your current password', 'error'); return; }
+        if (newPwd.length < 8) { showToast('New password must be at least 8 characters', 'error'); return; }
+        if (newPwd !== confirmPwd) { showToast('Passwords do not match', 'error'); return; }
+        setPwdSaving(true);
+        try {
+          await changePassword(currentPwd, newPwd);
+          setPwdSaving(false);
+          setCurrentPwd(''); setNewPwd(''); setConfirmPwd('');
+          showToast('Password changed successfully');
+        } catch (err: any) {
+          setPwdSaving(false);
+          showToast(err.message || 'Failed to change password', 'error');
+        }
+      };
+    ...
 
   const InfoItem = ({ label, value, editable, editValue, onEdit }: { label: string; value: string; editable?: boolean; editValue?: string; onEdit?: (v: string) => void }) => (
     <div>

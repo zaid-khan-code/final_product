@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import { useData } from '@/contexts/DataContext';
-import { getStatusColor, formatPKR, numberToWords } from '@/data/dummyData';
+import { getStatusColor, formatPKR, numberToWords } from '@/lib/utils';
 import { Plus, Eye, Pencil, Lock, Printer, Download } from 'lucide-react';
 import Modal from '@/components/Modal';
 import DecisionBanner from '@/components/DecisionBanner';

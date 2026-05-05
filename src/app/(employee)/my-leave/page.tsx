@@ -1,14 +1,16 @@
 "use client";
 import React, { useState } from 'react';
 import { useData } from '@/contexts/DataContext';
-import { getStatusColor } from '@/data/dummyData';
+import { useAuth } from '@/contexts/AuthContext';
+import { getStatusColor } from '@/lib/utils';
 import { Plus, CalendarDays } from 'lucide-react';
 import Modal from '@/components/Modal';
 import { useToastContext } from '@/contexts/ToastContext';
 
 export default function MyLeavePage() {
-  const { leaveRequests, setLeaveRequests } = useData();
-  const myLeaves = leaveRequests.filter((l: any) => l.empId === 'EMP001');
+  const { user } = useAuth();
+  const { leaveRequests, submitLeaveRequest } = useData();
+  const myLeaves = leaveRequests.filter((l: any) => l.employeeId === user?.employeeId || l.empId === user?.employeeId);
   const { showToast } = useToastContext();
   const [modal, setModal] = useState(false);
   const [leaveType, setLeaveType] = useState('Annual');
@@ -30,16 +32,20 @@ export default function MyLeavePage() {
   const bal = balances.find(b => b.type === leaveType);
   const over = bal && days > bal.remaining;
 
-  const submit = () => {
+  const submit = async () => {
     if (!fromDate || !toDate || !reason) { showToast('Fill all fields', 'error'); return; }
     if (over) { showToast('Exceeds balance', 'error'); return; }
-    setLeaveRequests(prev => [{
-      id: 'LR' + String(prev.length + 1).padStart(3, '0'),
-      empId: 'EMP001', empName: 'Ahmed Ali', leaveType,
-      from: fromDate, to: toDate, days, reason,
-      appliedOn: new Date().toISOString().split('T')[0], status: 'Pending',
-    }, ...prev]);
-    showToast('Leave submitted'); setModal(false); setFromDate(''); setToDate(''); setReason('');
+    try {
+      await submitLeaveRequest({
+        leaveType,
+        from: fromDate,
+        to: toDate,
+        reason,
+      });
+      showToast('Leave submitted'); setModal(false); setFromDate(''); setToDate(''); setReason('');
+    } catch (err) {
+      showToast('Failed to submit leave', 'error');
+    }
   };
 
   return (

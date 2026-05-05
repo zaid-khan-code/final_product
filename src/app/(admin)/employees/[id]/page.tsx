@@ -2,7 +2,7 @@
 import React, { useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useData } from '@/contexts/DataContext';
-import { getStatusColor, formatPKR } from '@/data/dummyData';
+import { getStatusColor, formatPKR } from '@/lib/utils';
 import { Pencil, Trash2, UserX, Plus, ChevronDown, FileText, Download, Printer, Clock, TrendingUp } from 'lucide-react';
 import Modal from '@/components/Modal';
 import DecisionBanner from '@/components/DecisionBanner';

@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 export default function Sidebar() {
-  const { user, activeRole, logout } = useAuth();
+  const { user, logout } = useAuth();
   const router = useRouter();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const pathname = usePathname();
@@ -100,7 +100,7 @@ export default function Sidebar() {
         ))}
       </div>
 
-      {activeRole === 'super_admin' && (
+      {user?.role === 'super_admin' && (
         <>
           <div className="sb-div" />
           <div className="sb-sec">
@@ -118,10 +118,10 @@ export default function Sidebar() {
       <div className="sb-bottom">
         <div className="sb-user">
           <div className="sb-chip" onClick={logout}>
-            <div className="sb-av">{user?.username?.substring(0, 2).toUpperCase()}</div>
+            <div className="sb-av">{user?.name?.substring(0, 2).toUpperCase()}</div>
             <div>
-              <div className="sb-un">{user?.username}</div>
-              <div className="sb-ur">{activeRole}</div>
+              <div className="sb-un">{user?.name}</div>
+              <div className="sb-ur">{user?.role}</div>
             </div>
             <LogOut size={14} style={{ marginLeft: 'auto', color: 'rgba(255,255,255,.18)' }} />
           </div>
